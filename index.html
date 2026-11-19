@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מדרשת האמונה · مدرسة الإيمان</title>
+<meta name="description" content="מאגר דו־לשוני של מקבילות בין התורה, הנביאים והכתובים, חז״ל, הקוראן והחדית׳ – עם הספר לקוראן, פירוש האסלאם לתורה ומקבילות לפי נושאים.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231b2f4a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23e9d9b0' font-family='serif'%3E%D7%9E%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+<div class="draft" id="draft">גרסת עבודה: המאגר בבנייה, וחלק מהחומר עדיין לא עבר בדיקה אנושית. שורות שלא סווגו או לא אומתו מסומנות ככאלה. <button type="button" onclick="document.getElementById('draft').remove()" aria-label="סגור">✕</button></div>
+<header class="top">
+  <div class="brand">
+    <a href="#/" class="logo">מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span></a>
+  </div>
+  <nav class="tabs" id="tabs">
+    <a href="#/b" data-tab="b">ספר ב׳ · התורה</a>
+    <a href="#/a" data-tab="a">ספר א׳ · הקוראן</a>
+    <a href="#/n" data-tab="n">נביאים וכתובים</a>
+    <a href="#/c" data-tab="c">ספר ג׳ · נושאים</a>
+    <a href="#/x" data-tab="x">נספחים</a>
+    <a href="#/h" data-tab="h">חדית׳</a>
+  </nav>
+  <form class="searchbox" id="searchForm" role="search">
+    <input id="q" type="search" placeholder="חיפוש בכל המאגר · بحث" autocomplete="off">
+    <button type="submit">חפש</button>
+  </form>
+  <div class="tools">
+    <div class="seg" role="group" aria-label="שפה">
+      <button type="button" data-lang="both" class="on">עב + عر</button>
+      <button type="button" data-lang="he">עב</button>
+      <button type="button" data-lang="ar">عر</button>
+    </div>
+    <button type="button" id="fontDown" title="הקטן גופן">א−</button>
+    <button type="button" id="fontUp" title="הגדל גופן">א+</button>
+    <button type="button" id="dark" title="מצב לילה">☾</button>
+    <button type="button" id="study" title="לימוד בחברותא">חברותא</button>
+  </div>
+</header>
+<main id="app" tabindex="-1"><div class="loading">טוען…</div></main>
+<footer class="foot">
+  <p>מדרשת האמונה · مدرسة الإيمان — מאגר דו־לשוני של מקבילות. נוסח המקרא: מקרא על פי המסורה; תרגום ערבי: ון־דייק (1865). תרגום הקוראן לעברית: טיוטת המאגר. <span id="built"></span></p>
+</footer>
+<div class="toast" id="toast" role="status"></div>
+<div class="modal" id="modal" hidden><div class="modal-box"><button type="button" class="x" id="modalClose" aria-label="סגור">✕</button><div id="modalBody"></div></div></div>
+<script src="assets/app.js"></script>
+</body>
+</html>
