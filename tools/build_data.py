@@ -279,7 +279,7 @@ def main(fa, fb, fc):
     hc, tc = rows(C, 'מקבילות נושאיות')
     keys = ['code', 'group', 'kind', 'title', 'titleAr', 'quran', 'hadith', 'torah', 'nakh', 'jewish', 'nt',
             'summary', 'summaryAr', 'themeCodes', 'quranVerses', None, None, None, 'origin', 'linksHe', 'linksAr',
-            'question', 'verify', 'moreIslam', 'moreJewish', 'deepen']
+            'question', 'verify', 'moreIslam', 'moreJewish', 'deepen', 'questionAr', 'deepenAr', 'related']
     ctopics = []
     for r in tc:
         d = {k: S(r[i]) for i, k in enumerate(keys) if k and i < len(r)}

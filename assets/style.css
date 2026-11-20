@@ -126,3 +126,12 @@ body:not(.lang-he):not(.lang-ar) .l-he + .l-ar::before{content:" · ";color:var(
 .src .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:700;font-family:var(--he);margin-bottom:6px}
 .pending{color:var(--muted);font-style:italic;font-size:.9em}
 .fieldrow{border-bottom:1px solid var(--line);padding:6px 0}
+/* page map / section navigator */
+.secnav{position:sticky;top:var(--toph,62px);z-index:5;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:var(--paper);border:1px solid var(--line,#ddd);border-radius:10px;padding:6px 10px;margin:10px 0 14px;font-size:.9em;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+.secnav .nt{font-weight:600;color:var(--muted,#666)}
+.secnav a{cursor:pointer;text-decoration:none;border-bottom:1px dotted currentColor}
+.secnav .lay{margin-inline-start:-6px}
+.secnav .lay input{vertical-align:middle;transform:scale(.85)}
+.secnav select.units{max-width:16em;font-size:.95em}
+.hide-text .layer-text,.hide-par .layer-par,.hide-note .layer-note{display:none!important}
+.qs{margin-top:28px}
