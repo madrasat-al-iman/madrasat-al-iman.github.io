@@ -22,6 +22,7 @@ OUT = os.path.join(ROOT, 'data')
 BOOKS = [('Gen', 'בראשית', 'التكوين'), ('Exod', 'שמות', 'الخروج'), ('Lev', 'ויקרא', 'اللاويين'),
          ('Num', 'במדבר', 'العدد'), ('Deut', 'דברים', 'التثنية')]
 HE2EN = {h: e for e, h, a in BOOKS}
+BOOKAR = {h: a for e, h, a in BOOKS}
 ACTIVE = {'פעיל', None, ''}
 
 
@@ -100,14 +101,16 @@ def main(fa, fb, fc):
     for r in par:
         if not S(r[0]) or S(r[1]) not in HE2EN:
             continue
-        parashot.append({'i': len(parashot) + 1, 'name': S(r[0]), 'book': S(r[1]), 'from': [I(r[2]), I(r[3])],
+        parashot.append({'i': len(parashot) + 1, 'name': S(r[0]), 'nameAr': S(r[13]) if len(r) > 13 else None,
+                         'book': S(r[1]), 'bookAr': BOOKAR.get(S(r[1])), 'from': [I(r[2]), I(r[3])],
                          'to': [I(r[4]), I(r[5])], 'verses': I(r[6]), 'themes': S(r[9]),
-                         'questions': S(r[12]) if len(r) > 12 else None})
+                         'questions': S(r[12]) if len(r) > 12 else None, 'questionsAr': S(r[14]) if len(r) > 14 else None})
     units = []
     for r in uni:
         if S(r[0]) not in HE2EN:
             continue
         units.append({'book': S(r[0]), 'from': [I(r[1]), I(r[2])], 'to': [I(r[10]), I(r[11])], 'name': S(r[3]),
+                      'nameAr': S(r[14]) if len(r) > 14 else None,
                       'type': S(r[4]), 'themes': S(r[6]), 'group': S(r[7])})
 
     # Torah parallels (B)
@@ -139,7 +142,8 @@ def main(fa, fb, fc):
     saadia = defaultdict(list)
     for r in sa:
         saadia[S(r[0])].append({'c': I(r[1]), 'v': I(r[2]), 'ref': S(r[3]), 'phrase': S(r[4]), 'vd': S(r[5]),
-                                'sa': S(r[6]), 'saHeb': S(r[7]), 'tr': S(r[8]), 'note': S(r[9]), 'verify': S(r[10])})
+                                'sa': S(r[6]), 'saHeb': S(r[7]), 'tr': S(r[8]), 'note': S(r[9]), 'verify': S(r[10]),
+                                'trAr': S(r[12]) if len(r) > 12 else None, 'noteAr': S(r[13]) if len(r) > 13 else None})
 
     def inrange(c, v, fr, to):
         return tuple(fr) <= (c, v) <= tuple(to)
@@ -284,7 +288,16 @@ def main(fa, fb, fc):
             search.append(['c', f'{d["code"]} {d.get("title") or ""}', f'c/{d["code"]}',
                            norm(' '.join(filter(None, [d.get(k) for k in ('title', 'titleAr', 'summary', 'summaryAr', 'quran',
                                                                           'hadith', 'torah', 'nakh', 'jewish', 'deepen', 'question')])))])
-    dump('themes.json', {'topics': ctopics, 'key': themes})
+    _, srcs = rows(C, 'מקורות מלאים לנושאים')
+    bycode = defaultdict(list)
+    for r in srcs:
+        bycode[S(r[0])].append({'kind': S(r[1]), 'kindAr': S(r[2]), 'ref': S(r[3]), 'refAr': S(r[4]), 'he': S(r[5]),
+                                'ar': S(r[6]), 'note': S(r[7]), 'noteAr': S(r[8]), 'ed': S(r[9])})
+    for d in ctopics:
+        dump(f'topics/{d["code"]}.json', dict(d, sources=bycode.get(d['code'], [])))
+        d['nsources'] = len(bycode.get(d['code'], []))
+    dump('themes.json', {'topics': [{k: d.get(k) for k in ('code', 'group', 'kind', 'title', 'titleAr', 'summary', 'summaryAr', 'nsources')} for d in ctopics],
+                         'key': themes})
     app = {}
     for name, slug in [('מחלוקות יסוד עתיקות', 'disputes'), ('שורשים תאומים', 'roots'),
                        ('פנינים מקבילות', 'pearls'), ('צומתי מפגש היסטוריים', 'crossroads')]:
