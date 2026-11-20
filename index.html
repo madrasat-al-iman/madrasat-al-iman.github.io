@@ -17,13 +17,12 @@
 <meta property="og:locale:alternate" content="ar_AR">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://yechiamporat.github.io/midreshet-haemuna/">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/fonts.css">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231b2f4a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23e9d9b0' font-family='serif'%3E%D7%9E%3C/text%3E%3C/svg%3E">
 </head>
 <body>
+<a class="skip" href="#app">דלג לתוכן · انتقل إلى المحتوى</a>
 <header class="top">
   <div class="brand">
     <a href="#/" class="logo">מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span></a>
@@ -42,28 +41,33 @@
     </div>
     <a href="#/about" data-tab="about"><span class="l-he">אודות</span><span class="l-ar" lang="ar">عن المشروع</span></a>
   </nav>
+  <div class="row2">
   <form class="searchbox" id="searchForm" role="search">
-    <input id="q" type="search" placeholder="חיפוש · بحث" autocomplete="off">
-    <button type="submit"><span class="l-he">חפש</span><span class="l-ar" lang="ar">ابحث</span></button>
+    <input id="q" type="search" placeholder="חיפוש · بحث" aria-label="חיפוש במאגר · البحث في القاعدة" autocomplete="off">
+    <button type="submit" aria-label="חפש · ابحث" title="חפש · ابحث"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button>
   </form>
   <div class="tools">
-    <div class="seg" role="group" aria-label="שפה · اللغة">
-      <button type="button" data-lang="both" class="on">עב + عر</button>
-      <button type="button" data-lang="he">עב</button>
-      <button type="button" data-lang="ar">عر</button>
+    <div class="seg" role="group" aria-label="שפת התצוגה · لغة العرض">
+      <button type="button" data-lang="both" class="on" aria-label="עברית וערבית · العبرية والعربية">עב·عر</button>
+      <button type="button" data-lang="he" aria-label="עברית בלבד · العبرية فقط">עב</button>
+      <button type="button" data-lang="ar" aria-label="ערבית בלבד · العربية فقط">عر</button>
     </div>
-    <button type="button" id="fontDown" title="הקטן גופן · تصغير الخط">א−</button>
-    <button type="button" id="fontUp" title="הגדל גופן · تكبير الخط">א+</button>
-    <button type="button" id="dark" title="מצב לילה · الوضع الليلي">☾</button>
+    <button type="button" id="fontDown" title="הקטן גופן · تصغير الخط" aria-label="הקטן גופן · تصغير الخط">א−</button>
+    <button type="button" id="fontUp" title="הגדל גופן · تكبير الخط" aria-label="הגדל גופן · تكبير الخط">א+</button>
+    <button type="button" id="dark" title="מצב לילה · الوضع الليلي" aria-label="מצב לילה · الوضع الليلي">☾</button>
     <button type="button" id="study" title="לימוד בחברותא · دراسة مشتركة"><span class="l-he">חברותא</span><span class="l-ar" lang="ar">دراسة مشتركة</span></button>
   </div>
+  </div>
 </header>
+<div id="announce" class="sr" role="status" aria-live="polite"></div>
 <main id="app" tabindex="-1"><div class="loading"><h1 style="font-size:1.4em;margin:0 0 8px">מדרשת האמונה · <span lang="ar">مدرسة الإيمان</span></h1>
 <p>מאגר דו־לשוני ללימוד משותף: הקוראן עם "תפסיר עם הספר", התורה עם "פירוש האסלאם", ונושאים לעיון המעמידים זה מול זה מקורות מן המקרא, חז״ל, הקוראן והחדית׳ – במלואם, בעברית ובערבית.</p>
 <p lang="ar">قاعدة بيانات ثنائية اللغة للدراسة المشتركة: القرآن مع «تفسير أهل الكتاب»، والتوراة مع «تفسير الإسلام»، وموضوعات للتأمل تضع نصوص التناخ والحكماء والقرآن والحديث جنبًا إلى جنب – كاملةً بالعبرية والعربية.</p>
 <p>טוען… · جارٍ التحميل…</p><noscript>יש להפעיל JavaScript · يرجى تفعيل جافاسكربت</noscript></div></main>
 <footer class="foot">
-  <p><span class="l-he">מדרשת האמונה — מאגר דו־לשוני של מקבילות. הקוראן: הכתיב העות׳מאני, ותרגום עברי חדש של המאגר. המקרא: נוסח המסורה, ובערבית תרגום ון־דייק (1865). החדית׳: ששת האוספים הקנוניים ועוד (מספור sunnah.com). חז״ל: Sefaria.</span><span class="l-ar" lang="ar">مدرسة الإيمان — قاعدة بيانات ثنائية اللغة للتوازيات. القرآن: الرسم العثماني مع ترجمة عبرية جديدة. التناخ (العهد القديم): النص الماسوري، والترجمة العربية لفان دايك (1865). الحديث: الكتب الستة وغيرها (ترقيم sunnah.com). نصوص الحكماء: سفاريا.</span> <span id="built"></span></p>
+  <p class="col-he-f"><span class="l-he">מדרשת האמונה — מאגר דו־לשוני של מקבילות. הקוראן: הכתיב העות׳מאני, ותרגום עברי חדש של המאגר. המקרא: נוסח המסורה, ובערבית תרגום ון־דייק (1865). החדית׳: ששת האוספים הקנוניים ועוד (מספור sunnah.com). חז״ל: ספריא.</span></p>
+  <p lang="ar" class="l-ar">مدرسة الإيمان — قاعدة بيانات ثنائية اللغة للتوازيات. القرآن: الرسم العثماني مع ترجمة عبرية جديدة. التناخ (العهد القديم): النص الماسوري، والترجمة العربية لفان دايك (1865). الحديث: الكتب الستة وغيرها (ترقيم sunnah.com). نصوص الحكماء: سفاريا.</p>
+  <p id="built"></p>
 </footer>
 <div class="toast" id="toast" role="status"></div>
 <div class="modal" id="modal" hidden><div class="modal-box"><button type="button" class="x" id="modalClose" aria-label="סגור · إغلاق">✕</button><div id="modalBody"></div></div></div>

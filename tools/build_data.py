@@ -54,7 +54,49 @@ def rows(wb, name):
     return [S(h) for h in it[0]], [r for r in it[1:] if any(c is not None for c in r)]
 
 
+INTERNAL = {'origin', 'verify'}  # working metadata: kept in the spreadsheets, not published to readers
+
+
+def public(o):
+    if isinstance(o, dict):
+        return {k: public(v) for k, v in o.items() if k not in INTERNAL}
+    if isinstance(o, list):
+        return [public(v) for v in o]
+    return o
+
+
+def edition(ed):
+    """Reader-facing edition line (he, ar) instead of internal tool notes."""
+    if not ed:
+        return None, None
+    he, ar = [], []
+    if 'tafsir_api' in ed or ed.startswith('תפסיר'):
+        he.append('תפסיר: הנוסח הערבי לפי הדפוס המקובל'); ar.append('التفسير: النص العربي حسب الطبعة المتداولة')
+    elif 'רייטר' in ed:
+        m = re.search(r'נספח[^.]*', ed)
+        he.append('איתור המקור: רייטר ודימנט (עורכים), סלע קיומנו / סלע קיומם, 2021' + (', ' + m.group(0) if m else '') + '. הנוסח הערבי הוקלד מחדש')
+        ar.append('تحديد المصدر: رايتر وديمنط (محرران)، «صخرة وجودنا / صخرة وجودهم»، 2021. أُعيدت طباعة النص العربي')
+    elif 'הכתיב העות׳מאני' in ed:
+        he.append('הקוראן: הכתיב העות׳מאני'); ar.append('القرآن: الرسم العثماني')
+    elif 'ון־דייק' in ed:
+        he.append('המקרא: נוסח המסורה; בערבית – תרגום ון־דייק (1865)'); ar.append('المقرا: النص الماسوري؛ وبالعربية ترجمة فان دايك (1865)')
+    elif 'sunnah.com' in ed:
+        he.append('החדית׳: לפי מספור sunnah.com'); ar.append('الحديث: حسب ترقيم sunnah.com')
+    elif 'ספריא' in ed or 'Sefaria' in ed:
+        he.append('הנוסח העברי: ספריא'); ar.append('النص العبري: سفاريا')
+    else:
+        he.append(ed); ar.append('')
+    if 'התרגום העברי' in ed or 'התרגום לעברית' in ed:
+        he.append('התרגום לעברית: תרגום המאגר'); ar.append('الترجمة العبرية: ترجمة القاعدة')
+    elif 'התרגום לערבית' in ed:
+        he.append('התרגום לערבית: תרגום המאגר'); ar.append('الترجمة العربية: ترجمة القاعدة')
+    if 'מקוצר' in ed or 'מקצר' in ed:
+        he.append('התרגום מקוצר במקומות המסומנים'); ar.append('الترجمة مختصرة في المواضع المشار إليها')
+    return ' · '.join(he), ' · '.join(x for x in ar if x)
+
+
 def dump(path, obj):
+    obj = public(obj)
     p = os.path.join(OUT, path)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, 'w', encoding='utf-8') as f:
@@ -292,7 +334,8 @@ def main(fa, fb, fc):
     bycode = defaultdict(list)
     for r in srcs:
         bycode[S(r[0])].append({'kind': S(r[1]), 'kindAr': S(r[2]), 'ref': S(r[3]), 'refAr': S(r[4]), 'he': S(r[5]),
-                                'ar': S(r[6]), 'note': S(r[7]), 'noteAr': S(r[8]), 'ed': S(r[9])})
+                                'ar': S(r[6]), 'note': S(r[7]), 'noteAr': S(r[8]),
+                                'ed': edition(S(r[9]))[0], 'edAr': edition(S(r[9]))[1]})
     for d in ctopics:
         dump(f'topics/{d["code"]}.json', dict(d, sources=bycode.get(d['code'], [])))
         d['nsources'] = len(bycode.get(d['code'], []))
@@ -302,7 +345,8 @@ def main(fa, fb, fc):
     for name, slug in [('מחלוקות יסוד עתיקות', 'disputes'), ('שורשים תאומים', 'roots'),
                        ('פנינים מקבילות', 'pearls'), ('צומתי מפגש היסטוריים', 'crossroads')]:
         h, rr = rows(C, name)
-        app[slug] = {'title': name, 'headers': h, 'rows': [[S(c) for c in r] for r in rr]}
+        keep = [j for j, x in enumerate(h) if x and not str(x).startswith('אימות') and x != 'מקור']
+        app[slug] = {'title': name, 'headers': [h[j] for j in keep], 'rows': [[S(r[j]) if j < len(r) else None for j in keep] for r in rr]}
         for r in rr:
             search.append(['x', f'{name}: {S(r[0])} {S(r[1]) or ""}', f'x/{slug}',
                            norm(' '.join(filter(None, [S(c) for c in r])))])
