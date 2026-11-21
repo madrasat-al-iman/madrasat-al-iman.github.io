@@ -160,7 +160,7 @@ function parallelCard(p, route, showBible) {
       ${cardActs(txt, route, jump)}</div>
     ${showBible && (p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe)}</div><div class="ar col-ar" lang="ar">${esc(p.bibleAr)}</div></div><hr style="border:0;border-top:1px dashed var(--line)">` : ''}
     ${(p.textHe || p.textAr) ? `<div class="two"><div class="he col-he">${p.textHe ? pre(p.textHe) : PENDING_HE}</div><div class="ar col-ar${p.type === 'קוראן' ? ' q-text' : ''}" lang="ar">${pre(p.textAr)}</div></div>` : ''}
-    <div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>
+    ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
     ${(p.hadithHe || p.hadithAr) ? `<div class="two note small"><div class="col-he pre"><b>חדית׳ מתורגמים:</b> ${esc(p.hadithHe || '')}</div><div class="col-ar ar pre" lang="ar"><b>أحاديث مترجمة:</b> ${esc(p.hadithAr || '')}</div></div>` : ''}
     ${p.unit || p.themes || p.id ? `<details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.unit ? `<div>${L('יחידה', 'الوحدة')}: ${esc(p.unit)}</div>` : ''}${p.themes ? `<div>${L('נושאים', 'الموضوعات')}: ${esc(p.themes)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}</details>` : ''}
   </div>`;
@@ -316,7 +316,7 @@ async function viewQuran(su, v) {
       <div class="chips">${p.corpus ? `<span class="chip">${tr(p.corpus, TYPE_AR)}</span>` : ''}${strengthChip(p.strength)}</div></div>
       ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, p.srcHe, p.srcAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${su}/${p.a}`)}</div>
       ${(p.srcHe || p.srcAr) ? `<div class="two"><div class="he col-he">${esc(p.srcHe)}</div><div class="ar col-ar" lang="ar">${p.srcAr ? esc(p.srcAr) : PENDING}</div></div>` : ''}
-      <div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>
+      ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
       ${p.context || p.edition ? `<details class="more"><summary>${L('הקשר רחב ומהדורה', 'السياق والطبعة')}</summary>${esc(p.context || '')} ${esc(p.edition || '')}</details>` : ''}
     </div>` : `<div class="card small"><div><span class="t">${rng(p)}</span> <span class="muted">⇄</span> <a class="t" href="#/${p.route}">${L(esc(p.ref), esc(refAr(p.ref) || p.ref))}</a> ${strengthChip(p.strength)}</div><div class="muted">${esc(p.note || '')}</div></div>`).join('')}</div>`;
   $('.page', app).innerHTML = `<div class="crumbs">${L('הקוראן ותפסיר עם הספר', 'القرآن وتفسير أهل الكتاب')}</div>
@@ -452,8 +452,10 @@ async function viewAppendix(slug, anchor) {
   const side = h => /יהדות|יהודי|בעברית/.test(h) ? 'j' : (/אסלאם|אסלאמי|בערבית|عربي/.test(h) ? 'i' : '');
   const lab = h => isAr(h) ? `<span lang="ar">${esc(h)}</span>` : L(esc(h), esc(HDR_AR[h] || ''));
   const hasCode = H[0] === 'קוד';
-  const AR_OF = { 'משמעות ומראי מקום ביהדות': 'משמעות ביהדות – ערבית', 'משמעות ומראי מקום באסלאם': 'משמעות באסלאם – ערבית', 'נקודת המפגש והמשמעות הרעיונית': 'נקודת המפגש – ערבית' };
-  const arIdx = j => H.indexOf(AR_OF[H[j]]);
+  const AR_OF = { 'משמעות ומראי מקום ביהדות': 'משמעות ביהדות – ערבית', 'משמעות ומראי מקום באסלאם': 'משמעות באסלאם – ערבית', 'נקודת המפגש והמשמעות הרעיונית': 'נקודת המפגש – ערבית',
+    'העמדה הקלאסית ביהדות (ומראי מקום)': 'העמדה ביהדות – ערבית', 'העמדה הקלאסית באסלאם (ומראי מקום)': 'העמדה באסלאם – ערבית', 'שורש הפער התיאולוגי / הפרשני': 'שורש הפער – ערבית',
+    'מפתח ללימוד מכבד בחברותא': 'מפתח ללימוד – ערבית', 'המקור היהודי (עברית)': 'המקור היהודי – ערבית', 'מוקד ההשפעה והדיאלוג ההדדי': 'מוקד ההשפעה – ערבית' };
+  const arIdx = j => H.indexOf(AR_OF[H[j]] || (H[j] + ' – ערבית'));
   const card = r => {
     const code = hasCode ? r[0] : '';
     const start = hasCode ? 1 : 0;
@@ -461,6 +463,7 @@ async function viewAppendix(slug, anchor) {
     let titleIdx = start; let titleAr = -1;
     if (hasCode && side(H[start + 1]) === 'i' && side(H[start]) === 'j') { titleAr = start + 1; used.add(start + 1); }
     if (hasCode && isAr(H[start + 1])) { titleAr = start + 1; used.add(start + 1); }
+    let titleTr = titleAr < 0 ? arIdx(titleIdx) : -1;
     const pairs = [], rest = [];
     for (let j = start; j < H.length; j++) {
       if (used.has(j) || !r[j]) continue;
@@ -472,7 +475,7 @@ async function viewAppendix(slug, anchor) {
       if (isArCell) return `<div class="fv ar" lang="ar">${linkQuran(r[j] || '')}</div>`;
       return `<div class="fv"><div class="col-he">${linkQuran(r[j] || '')}</div>${arTxt ? `<div class="col-ar ar" lang="ar">${esc(arTxt)}</div>` : ''}</div>`; };
     return `<div class="apx" id="${esc(code || '')}" data-f="${esc(norm(r.join(' ')))}">
-      <div class="ah">${code ? `<span class="chip">${esc(code)}</span>` : ''}<span class="ttl">${esc(r[titleIdx] || '')}</span>${titleAr > 0 && r[titleAr] ? `<span class="ttl ar" lang="ar">${esc(r[titleAr])}</span>` : ''}${code ? cardActs([r[titleIdx], r[titleAr]].filter(Boolean).join(' · ') + '\n' + r.slice(1).filter(Boolean).join('\n'), `x/${slug}/${code}`) : ''}</div>
+      <div class="ah">${code ? `<span class="chip">${esc(code)}</span>` : ''}<span class="ttl col-he">${esc(r[titleIdx] || '')}</span>${titleAr > 0 && r[titleAr] ? `<span class="ttl ar" lang="ar">${esc(r[titleAr])}</span>` : ''}${titleTr >= 0 && r[titleTr] ? `<span class="ttl ar col-ar" lang="ar">${esc(r[titleTr])}</span>` : ''}${code ? cardActs([r[titleIdx], r[titleAr]].filter(Boolean).join(' · ') + '\n' + r.slice(1).filter(Boolean).join('\n'), `x/${slug}/${code}`) : ''}</div>
       ${pairs.map(([j, k]) => `<div class="two"><div><span class="fl">${lab(H[j])}</span>${fv(j)}</div><div><span class="fl">${lab(H[k])}</span>${fv(k)}</div></div>`).join('')}
       ${rest.map(j => `<div><span class="fl">${lab(H[j])}</span>${fv(j)}</div>`).join('')}</div>`;
   };

@@ -335,7 +335,8 @@ def main(fa, fb, fc):
     for r in srcs:
         bycode[S(r[0])].append({'kind': S(r[1]), 'kindAr': S(r[2]), 'ref': S(r[3]), 'refAr': S(r[4]), 'he': S(r[5]),
                                 'ar': S(r[6]), 'note': S(r[7]), 'noteAr': S(r[8]),
-                                'ed': edition(S(r[9]))[0], 'edAr': edition(S(r[9]))[1]})
+                                'ed': edition(S(r[9]) + ('; התרגום לערבית' if S(r[6]) and S(r[1]) == 'משנה' else ''))[0],
+                                'edAr': edition(S(r[9]) + ('; התרגום לערבית' if S(r[6]) and S(r[1]) == 'משנה' else ''))[1]})
     for d in ctopics:
         dump(f'topics/{d["code"]}.json', dict(d, sources=bycode.get(d['code'], [])))
         d['nsources'] = len(bycode.get(d['code'], []))
