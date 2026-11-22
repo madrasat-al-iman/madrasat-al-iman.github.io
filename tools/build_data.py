@@ -163,62 +163,23 @@ def parsha_weeks(parashot):
     return out
 
 
-SITE = 'https://yechiamporat.github.io/midreshet-haemuna/'
-
-
-def _clip(t, n):
-    t = re.sub(r'\s+', ' ', t or '').strip()
-    return t if len(t) <= n else t[:n].rsplit(' ', 1)[0] + '…'
-
-
-def share_pages(ctopics, plist, sura_list, nak_list):
-    """Small static pages (one per topic, Torah portion, sura and Nakh book) carrying their own title and
-    description for link previews and search engines; each forwards the reader to the page inside the site."""
-    import html as H
+def share_pages(*_):
+    """Full static pages (tools/static_pages.py), sitemap.xml, robots.txt; the site address comes from site.json."""
+    import shutil
+    import static_pages
     js = open(os.path.join(ROOT, 'assets', 'app.js'), encoding='utf-8').read()
     sura_he = json.loads(re.search(r'const SURA_HE = (\[.*?\]);', js).group(1))
     nakh_ar = dict(re.findall(r"'([^']+)': '([^']+)'", re.search(r'const NAKH_AR = \{(.*?)\};', js, re.S).group(1)))
-    pages = []
-    for t in ctopics:
-        pages.append((f"c/{t['code']}", f"{t['title']} · {t.get('titleAr') or ''}",
-                      _clip(t.get('summary'), 180) + ' · ' + _clip(t.get('summaryAr'), 120)))
-    for p in plist:
-        ar = re.sub(r'\s*\(.*?\)', '', p.get('nameAr') or '')
-        pages.append((f"b/{p['i']}", f"פרשת {p['name']} · برشا {ar}",
-                      f"{p['book']} – התורה עם המקבילות מן הקוראן ומן החדית׳ ({p['parallels']}) · التوراة مع توازياتها من القرآن والحديث"))
-    for q in sura_list:
-        pages.append((f"a/{q['n']}", f"סורה {q['n']}: {sura_he[q['n']]} · سورة {q['name']}",
-                      f"הסורה בערבית ובתרגום עברי, עם {q['parallels']} מקבילות מן המקרא ומספרות חז״ל · السورة بالعربية وبترجمة عبرية مع التوازيات من المقرا وأدب الحكماء"))
-    for k, b in enumerate(nak_list, 1):
-        pages.append((f"n/{k}", f"{b['book']} · {nakh_ar.get(b['book'], '')}",
-                      f"{b['count']} מקבילות מן הקוראן ומן החדית׳ · توازيات من القرآن والحديث"))
-    out_dir = os.path.join(ROOT, 'share')
-    for route, title, desc in pages:
-        url = f'{SITE}share/{route}.html'
-        t, d = H.escape(title + ' · מדרשת האמונה'), H.escape(desc)
-        page = f"""<!DOCTYPE html>
-<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{t}</title><meta name="description" content="{d}">
-<meta property="og:type" content="article"><meta property="og:site_name" content="מדרשת האמונה · مدرسة الإيمان">
-<meta property="og:title" content="{H.escape(title)}"><meta property="og:description" content="{d}">
-<meta property="og:url" content="{url}"><meta property="og:image" content="{SITE}assets/og-card.png">
-<meta property="og:locale" content="he_IL"><meta property="og:locale:alternate" content="ar_AR"><meta name="twitter:card" content="summary_large_image">
-<link rel="canonical" href="{url}">
-<script>var l=new URLSearchParams(location.search).get('l');location.replace('../../index.html#/{route}'+(l?'?l='+l:''));</script>
-</head><body><h1>{H.escape(title)}</h1><p>{d}</p><p><a href="../../index.html#/{route}">לדף במדרשת האמונה · إلى الصفحة في مدرسة الإيمان</a></p></body></html>
-"""
-        p = os.path.join(out_dir, route + '.html')
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        with open(p, 'w', encoding='utf-8') as f:
-            f.write(page)
-    today = datetime.date.today().isoformat()
-    urls = [SITE] + [f'{SITE}share/{r}.html' for r, _, _ in pages]
-    with open(os.path.join(ROOT, 'sitemap.xml'), 'w', encoding='utf-8') as f:
-        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
-        f.write(''.join(f'  <url><loc>{u}</loc><lastmod>{today}</lastmod></url>\n' for u in urls))
-        f.write('</urlset>\n')
-    with open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8') as f:
-        f.write(f'User-agent: *\nAllow: /\nSitemap: {SITE}sitemap.xml\n')
+    shutil.rmtree(os.path.join(ROOT, 'share'), ignore_errors=True)    # replaced by the full pages
+    n = static_pages.build(sura_he, nakh_ar)
+    site = static_pages.site_url()
+    p = os.path.join(ROOT, 'index.html')
+    h = open(p, encoding='utf-8').read()
+    h = re.sub(r'(<meta property="og:url" content=")[^"]*(")', rf'\g<1>{site}\g<2>', h)
+    h = re.sub(r'(<meta property="og:image" content=")[^"]*?(assets/og-card\.png")', rf'\g<1>{site}\g<2>', h)
+    h = re.sub(r'(<link rel="canonical" href=")[^"]*(")', rf'\g<1>{site}\g<2>', h)
+    open(p, 'w', encoding='utf-8').write(h)
+    print('static pages', n)
 
 
 def main(fa, fb, fc):

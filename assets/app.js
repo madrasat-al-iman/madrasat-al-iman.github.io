@@ -421,7 +421,7 @@ const GROUP_AR = { 'אמונה': 'الإيمان', 'פולחן': 'العبادة
 const STARTERS = ['N09', 'S04', 'N02', 'N04', 'N29', 'S09'];
 /* pages that have a static share page (with their own title and description for WhatsApp / search engines) */
 const shareUrl = route => /^(c\/[A-Z]\d+|b\/\d+|a\/\d+|n\/\d+)$/.test(route)
-  ? location.origin + location.pathname.replace(/index\.html$/, '') + 'share/' + route + '.html' : location.origin + location.pathname + '#/' + route;
+  ? location.origin + location.pathname.replace(/index\.html$/, '') + route + '.html' : location.origin + location.pathname + '#/' + route;
 function shareBar(title, titleAr, summary, summaryAr, route) {
   const base = shareUrl(route), sep = '?';
   const msg = {
