@@ -213,3 +213,13 @@ details.kind > .src{margin:8px}
 .tl-row .sm.l-ar::before{content:none!important}
 .side .sub::before{content:none!important}
 .top .row2{min-width:0;width:100%} .searchbox input{min-width:0} .searchbox{min-width:0}
+.dt{font-size:12.5px;color:var(--muted);margin:4px 0 2px;line-height:1.6}
+.dt b{color:var(--gold);font-weight:600}
+.dt span[title]{border-bottom:1px dotted var(--line)}
+.dt .l-he,.dt .l-ar{display:block}
+.dt .l-ar::before{content:none!important}
+.lang-he .dt .l-ar,.lang-ar .dt .l-he{display:none}
+.card.fq{border-inline-start:3px solid var(--green)}
+.dtt{display:grid;gap:2px}
+.dtr{display:grid;grid-template-columns:1.4fr 1.4fr 1fr 1fr;gap:10px;padding:5px 6px;border-bottom:1px solid var(--line);font-size:14px}
+@media(max-width:700px){.dtr{grid-template-columns:1fr 1fr}}
