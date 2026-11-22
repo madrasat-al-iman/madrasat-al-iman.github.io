@@ -209,7 +209,8 @@ def main(fa, fb, fc):
         for x in pars:
             for (su, a, b) in quran_refs((x['src'] or '') if 'קוראן' in (x['type'] or '') or re.match(r'^\d', x['src'] or '') else ''):
                 reverse_q[su].append({'a': a, 'b': b, 'ref': x['ref'], 'route': f'b/{p["i"]}/{x["c"]}:{x["v"]}',
-                                      'note': x['note'], 'strength': x['strength']})
+                                      'note': x['note'], 'noteAr': x['noteAr'], 'strength': x['strength'],
+                                      'refAr': x['refAr'], 'bibleHe': x['bibleHe'], 'bibleAr': x['bibleAr']})
             search.append(['b', f'{x["ref"]} ⇄ {x["src"] or ""}', f'b/{p["i"]}/{x["c"]}:{x["v"]}',
                            norm(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
         for x in sas:
@@ -241,7 +242,8 @@ def main(fa, fb, fc):
         for x in lst:
             for (su, a, b) in quran_refs(x['src'] if 'קוראן' in (x['type'] or '') or re.match(r'^\d', x['src'] or '') else ''):
                 reverse_q[su].append({'a': a, 'b': b, 'ref': x['ref'], 'route': f'n/{len(nak_list)}/{x["c"]}:{x["v"]}',
-                                      'note': x['note'], 'strength': x['strength']})
+                                      'note': x['note'], 'noteAr': x['noteAr'], 'strength': x['strength'],
+                                      'refAr': x['refAr'], 'bibleHe': x['bibleHe'], 'bibleAr': x['bibleAr']})
             search.append(['n', f'{x["ref"]} ⇄ {x["src"] or ""}', f'n/{len(nak_list)}/{x["c"]}:{x["v"]}',
                            norm(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
 

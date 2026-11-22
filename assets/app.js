@@ -318,7 +318,13 @@ async function viewQuran(su, v) {
       ${(p.srcHe || p.srcAr) ? `<div class="two"><div class="he col-he">${esc(p.srcHe)}</div><div class="ar col-ar" lang="ar">${p.srcAr ? esc(p.srcAr) : PENDING}</div></div>` : ''}
       ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
       ${p.context || p.edition ? `<details class="more"><summary>${L('הקשר רחב ומהדורה', 'السياق والطبعة')}</summary>${esc(p.context || '')} ${esc(p.edition || '')}</details>` : ''}
-    </div>` : `<div class="card small"><div><span class="t">${rng(p)}</span> <span class="muted">⇄</span> <a class="t" href="#/${p.route}">${L(esc(p.ref), esc(refAr(p.ref) || p.ref))}</a> ${strengthChip(p.strength)}</div><div class="muted">${esc(p.note || '')}</div></div>`).join('')}</div>`;
+    </div>` : `<div class="card">
+      <div class="card-h"><div><span class="t col-he">${rng(p)} <span class="muted">⇄</span> <a href="#/${p.route}">${esc(p.ref)}</a></span>${(p.refAr || refAr(p.ref)) ? `<div class="t col-ar ar" lang="ar">${esc(d.name)} ${rng(p)} ⇄ <a href="#/${p.route}">${esc(p.refAr || refAr(p.ref))}</a></div>` : ''}
+      <div class="chips"><span class="chip">${tr('תנ״ך', TYPE_AR)}</span>${strengthChip(p.strength)}</div></div>
+      ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, p.bibleHe, p.bibleAr, p.note, p.noteAr].filter(Boolean).join('\n'), p.route)}</div>
+      ${(p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe || '')}</div><div class="ar col-ar" lang="ar">${p.bibleAr ? esc(p.bibleAr) : PENDING}</div></div>` : ''}
+      ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
+    </div>`).join('')}</div>`;
   $('.page', app).innerHTML = `<div class="crumbs">${L('הקוראן ותפסיר עם הספר', 'القرآن وتفسير أهل الكتاب')}</div>
     <h1>${L(`סורה ${su}: ${esc(SURA_HE[su])}`, `سورة ${arNum(su)}: ${esc(d.name)}`)}</h1>
     <div class="muted">${L(`${d.verses.length} פסוקים · ${d.parallels.length + d.bible.length} מקבילות`, `${arNum(d.verses.length)} آية · ${arNum(d.parallels.length + d.bible.length)} توازيًا`)}</div>
