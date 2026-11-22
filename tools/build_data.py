@@ -13,12 +13,15 @@ import sys, os, re, json, datetime, unicodedata
 from collections import defaultdict
 from openpyxl import load_workbook
 
-sys.path.insert(0, '/home/claude/work')
-sys.path.insert(0, '/home/claude/work/par')
+# local helper modules (Bible corpus, Hebrew reference parser) live in a work folder outside the repo
+WORK = os.environ.get('MIDRESHET_WORK', '/home/claude/work')
+sys.path.insert(0, WORK)
+sys.path.insert(0, os.path.join(WORK, 'par'))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bible  # noqa: E402
 import hebref  # noqa: E402
 import dating  # noqa: E402
+from hadith_books import B as HADITH_BOOKS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'data')
@@ -128,6 +131,94 @@ def norm(s):
     s = re.sub('[إأآٱ]', 'ا', s).replace('ى', 'ي').replace('ة', 'ه')
     s = s.replace('״', '"').replace('׳', "'").replace('־', ' ')
     return re.sub(r'\s+', ' ', s).strip().lower()
+
+
+_LIGHT = re.compile('[\u0591-\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640\u200e\u200f]')
+
+
+def light(s):
+    """search text: niqqud/harakat removed, letters kept as written (the client folds letter variants 1:1)"""
+    s = _LIGHT.sub('', (s or '').replace('\u05be', ' '))
+    return re.sub(r'\s+', ' ', s).strip()
+
+
+PLACEHOLDER = {'התרגום לעברית – בהכנה', 'התרגום לערבית – בהכנה', 'الترجمة العبرية قيد الإعداد', 'الترجمة العربية قيد الإعداد'}
+INTERNAL_TAG = re.compile(r'\s*\[(?:שורות בגיליון|صفوف في)[^\]]*\]')
+
+
+def parsha_weeks(parashot):
+    """[[date of Shabbat, [parasha i, ...]], ...] for the Land of Israel reading cycle, a year back to three years ahead"""
+    try:
+        from pyluach import dates, parshios
+    except ImportError:
+        return []
+    out = []
+    d = datetime.date.today() - datetime.timedelta(days=7)
+    d += datetime.timedelta(days=(5 - d.weekday()) % 7)
+    for _ in range(160):
+        idx = parshios.getparsha(dates.GregorianDate(d.year, d.month, d.day), israel=True)
+        if idx:
+            out.append([d.isoformat(), [k + 1 for k in idx if k + 1 <= len(parashot)]])
+        d += datetime.timedelta(days=7)
+    return out
+
+
+SITE = 'https://yechiamporat.github.io/midreshet-haemuna/'
+
+
+def _clip(t, n):
+    t = re.sub(r'\s+', ' ', t or '').strip()
+    return t if len(t) <= n else t[:n].rsplit(' ', 1)[0] + '…'
+
+
+def share_pages(ctopics, plist, sura_list, nak_list):
+    """Small static pages (one per topic, Torah portion, sura and Nakh book) carrying their own title and
+    description for link previews and search engines; each forwards the reader to the page inside the site."""
+    import html as H
+    js = open(os.path.join(ROOT, 'assets', 'app.js'), encoding='utf-8').read()
+    sura_he = json.loads(re.search(r'const SURA_HE = (\[.*?\]);', js).group(1))
+    nakh_ar = dict(re.findall(r"'([^']+)': '([^']+)'", re.search(r'const NAKH_AR = \{(.*?)\};', js, re.S).group(1)))
+    pages = []
+    for t in ctopics:
+        pages.append((f"c/{t['code']}", f"{t['title']} · {t.get('titleAr') or ''}",
+                      _clip(t.get('summary'), 180) + ' · ' + _clip(t.get('summaryAr'), 120)))
+    for p in plist:
+        ar = re.sub(r'\s*\(.*?\)', '', p.get('nameAr') or '')
+        pages.append((f"b/{p['i']}", f"פרשת {p['name']} · برشا {ar}",
+                      f"{p['book']} – התורה עם המקבילות מן הקוראן ומן החדית׳ ({p['parallels']}) · التوراة مع توازياتها من القرآن والحديث"))
+    for q in sura_list:
+        pages.append((f"a/{q['n']}", f"סורה {q['n']}: {sura_he[q['n']]} · سورة {q['name']}",
+                      f"הסורה בערבית ובתרגום עברי, עם {q['parallels']} מקבילות מן המקרא ומספרות חז״ל · السورة بالعربية وبترجمة عبرية مع التوازيات من المقرا وأدب الحكماء"))
+    for k, b in enumerate(nak_list, 1):
+        pages.append((f"n/{k}", f"{b['book']} · {nakh_ar.get(b['book'], '')}",
+                      f"{b['count']} מקבילות מן הקוראן ומן החדית׳ · توازيات من القرآن والحديث"))
+    out_dir = os.path.join(ROOT, 'share')
+    for route, title, desc in pages:
+        url = f'{SITE}share/{route}.html'
+        t, d = H.escape(title + ' · מדרשת האמונה'), H.escape(desc)
+        page = f"""<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{t}</title><meta name="description" content="{d}">
+<meta property="og:type" content="article"><meta property="og:site_name" content="מדרשת האמונה · مدرسة الإيمان">
+<meta property="og:title" content="{H.escape(title)}"><meta property="og:description" content="{d}">
+<meta property="og:url" content="{url}"><meta property="og:image" content="{SITE}assets/og-card.png">
+<meta property="og:locale" content="he_IL"><meta property="og:locale:alternate" content="ar_AR"><meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="{url}">
+<script>var l=new URLSearchParams(location.search).get('l');location.replace('../../index.html#/{route}'+(l?'?l='+l:''));</script>
+</head><body><h1>{H.escape(title)}</h1><p>{d}</p><p><a href="../../index.html#/{route}">לדף במדרשת האמונה · إلى الصفحة في مدرسة الإيمان</a></p></body></html>
+"""
+        p = os.path.join(out_dir, route + '.html')
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, 'w', encoding='utf-8') as f:
+            f.write(page)
+    today = datetime.date.today().isoformat()
+    urls = [SITE] + [f'{SITE}share/{r}.html' for r, _, _ in pages]
+    with open(os.path.join(ROOT, 'sitemap.xml'), 'w', encoding='utf-8') as f:
+        f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
+        f.write(''.join(f'  <url><loc>{u}</loc><lastmod>{today}</lastmod></url>\n' for u in urls))
+        f.write('</urlset>\n')
+    with open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8') as f:
+        f.write(f'User-agent: *\nAllow: /\nSitemap: {SITE}sitemap.xml\n')
 
 
 def main(fa, fb, fc):
@@ -276,10 +367,10 @@ def main(fa, fb, fc):
                                       'note': x['note'], 'noteAr': x['noteAr'], 'strength': x['strength'],
                                       'refAr': x['refAr'], 'bibleHe': x['bibleHe'], 'bibleAr': x['bibleAr']})
             search.append(['b', f'{x["ref"]} ⇄ {x["src"] or ""}', f'b/{p["i"]}/{x["c"]}:{x["v"]}',
-                           norm(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
+                           light(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
         for x in sas:
             search.append(['s', f'רס״ג: {x["ref"]} – {x["phrase"]}', f'b/{p["i"]}/{x["c"]}:{x["v"]}',
-                           norm(' '.join(filter(None, [x['phrase'], x['sa'], x['tr'], x['note']])))])
+                           light(' '.join(filter(None, [x['phrase'], x['sa'], x['tr'], x['note']])))])
 
     # Nakh
     h2, nak = rows(B, 'נביאים וכתובים ← קוראן וחדית׳')
@@ -309,14 +400,14 @@ def main(fa, fb, fc):
         dump(f'nakh/{len(nak_list):02d}.json', {'book': bk, 'parallels': lst, 'fromQuran': fq})
         for x in fq:
             search.append(['n', f'{x["ref"]} ⇄ {x["su"]}:{x["a"]}', f'n/{len(nak_list)}/{x["c"]}:{x["v"]}',
-                           norm(' '.join(filter(None, [x['ref'], x['note'], x['noteAr'], x['topic']])))])
+                           light(' '.join(filter(None, [x['ref'], x['note'], x['noteAr'], x['topic']])))])
         for x in lst:
             for (su, a, b) in quran_refs(x['src'] if 'קוראן' in (x['type'] or '') or re.match(r'^\d', x['src'] or '') else ''):
                 reverse_q[su].append({'a': a, 'b': b, 'ref': x['ref'], 'route': f'n/{len(nak_list)}/{x["c"]}:{x["v"]}',
                                       'note': x['note'], 'noteAr': x['noteAr'], 'strength': x['strength'],
                                       'refAr': x['refAr'], 'bibleHe': x['bibleHe'], 'bibleAr': x['bibleAr']})
             search.append(['n', f'{x["ref"]} ⇄ {x["src"] or ""}', f'n/{len(nak_list)}/{x["c"]}:{x["v"]}',
-                           norm(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
+                           light(' '.join(filter(None, [x['ref'], x['src'], x['srcAr'], x['note'], x['noteAr'], x['textHe']])))])
 
     # ---------------- Quran (A) ----------------
     hq, q = rows(A, 'קוראן')
@@ -360,20 +451,39 @@ def main(fa, fb, fc):
         suras[su].append({'v': v, 'ar': S(r[3]), 'he': S(r[4]), 'topics': S(r[5]), 'story': S(r[6]),
                           'notes': tnotes.get((su, v)) or None, 'hadith': S(r[10])})
     sura_list = []
+    def refkey(r):
+        return re.sub(r'[\s,.;:׳״"\'\u0591-\u05C7–-]', '', r or '')
+
+    def overlap(x, y):
+        a1, b1, a2, b2 = I(x['a']) or 0, I(x['b']) or I(x['a']) or 0, I(y['a']) or 0, I(y['b']) or I(y['a']) or 0
+        return a1 <= b2 and a2 <= b1
+
+    ndup = 0
+    for su in list(vpar):                      # one card per (Tanakh/Hazal reference, overlapping verses) on a sura page
+        kept = []
+        for x in sorted(vpar[su], key=lambda x: -(len(x.get('note') or '') + len(x.get('srcHe') or '') + 50 * bool(x.get('refAr')))):
+            if any(refkey(x['ref']) == refkey(y['ref']) and overlap(x, y) for y in kept):
+                ndup += 1
+                continue
+            kept.append(x)
+        vpar[su] = kept
+        before = len(reverse_q[su])
+        reverse_q[su] = [y for y in reverse_q[su] if not any(refkey(y['ref']) == refkey(x['ref']) and overlap(x, y) for x in kept)]
+        ndup += before - len(reverse_q[su])
     for su in sorted(suras):
         dump(f'quran/{su:03d}.json', {'n': su, 'name': names[su], 'verses': suras[su],
-                                      'parallels': sorted(vpar[su], key=lambda x: (x['a'] or 0)),
+                                      'parallels': sorted(vpar[su], key=lambda x: (I(x['a']) or 0)),
                                       'bible': sorted(reverse_q[su], key=lambda x: x['a'])})
         sura_list.append({'n': su, 'name': names[su], 'verses': len(suras[su]),
                           'parallels': len(vpar[su]) + len(reverse_q[su])})
         for x in vpar[su]:
             search.append(['a', f'{su}:{x["a"]} ⇄ {x["ref"] or ""}', f'a/{su}/{x["a"]}',
-                           norm(' '.join(filter(None, [x['ref'], x['refAr'], x['note'], x['noteAr'], x['topic']])))])
+                           light(' '.join(filter(None, [x['ref'], x['refAr'], x['note'], x['noteAr'], x['topic']])))])
         for (k, notes) in [(k, n) for k, n in tnotes.items() if k[0] == su]:
-            search.append(['t', f'הערת תרגום {su}:{k[1]}', f'a/{su}/{k[1]}', norm(' '.join(notes))])
+            search.append(['t', f'הערת תרגום {su}:{k[1]}', f'a/{su}/{k[1]}', light(' '.join(notes))])
 
     # Quran full text search index (separate, larger)
-    qsearch = [[su, x['v'], norm(x['ar']), norm(x['he'])] for su in sorted(suras) for x in suras[su]]
+    qsearch = [[su, x['v'], light(x['ar']), light(x['he'])] for su in sorted(suras) for x in suras[su]]
     dump('search_quran.json', qsearch)
 
     # ---------------- Hadith texts (A) ----------------
@@ -382,7 +492,8 @@ def main(fa, fb, fc):
     for i, r in enumerate(ht, 2):
         if not S(r[0]):
             continue
-        hadith[S(r[0])].append({'row': i, 'n': S(r[2]), 'book': S(r[3]), 'ar': S(r[4]),
+        bk = HADITH_BOOKS.get(S(r[3]) or '', (S(r[3]), None))
+        hadith[S(r[0])].append({'row': i, 'n': S(r[2]), 'book': bk[0], 'bookAr': bk[1], 'ar': S(r[4]),
                                 'he': S(r[5]) if len(r) > 5 else None})
     coll_list = []
     for k, (coll, lst) in enumerate(sorted(hadith.items(), key=lambda kv: -len(kv[1])), 1):
@@ -390,7 +501,7 @@ def main(fa, fb, fc):
         coll_list.append({'i': k, 'collection': coll, 'count': len(lst), 'translated': sum(1 for x in lst if x['he'])})
         for x in lst:
             if x['he']:
-                search.append(['h', f'{coll} {x["n"]}', f'h/{k}/{x["n"]}', norm((x['he'] or '')[:600])])
+                search.append(['h', f'{coll} {x["n"]}', f'h/{k}/{x["n"]}', light((x['he'] or '')[:600])])
 
     # ---------------- Book C ----------------
     hc, tc = rows(C, 'מקבילות נושאיות')
@@ -401,19 +512,27 @@ def main(fa, fb, fc):
     for r in tc:
         d = {k: S(r[i]) for i, k in enumerate(keys) if k and i < len(r)}
         if d.get('code'):
+            for k in ('linksHe', 'linksAr'):      # internal row pointers are working metadata, not for readers
+                if d.get(k):
+                    d[k] = INTERNAL_TAG.sub('', d[k])
+            if d.get('quranVerses') and not re.search(r'\d+:\d+', d['quranVerses']):
+                d['quranVerses'] = None           # a bare count, not a list of verses
             d['dt'] = {k: v for k in ('quran', 'hadith', 'torah', 'nakh', 'jewish', 'nt', 'moreIslam', 'moreJewish', 'deepen', 'summary')
                        for v in [dt(d.get(k))] if v} or None
             ctopics.append(d)
             search.append(['c', f'{d["code"]} {d.get("title") or ""}', f'c/{d["code"]}',
-                           norm(' '.join(filter(None, [d.get(k) for k in ('title', 'titleAr', 'summary', 'summaryAr', 'quran',
+                           light(' '.join(filter(None, [d.get(k) for k in ('title', 'titleAr', 'summary', 'summaryAr', 'quran',
                                                                           'hadith', 'torah', 'nakh', 'jewish', 'deepen', 'question')])))])
     _, srcs = rows(C, 'מקורות מלאים לנושאים')
     bycode = defaultdict(list)
     for r in srcs:
         bycode[S(r[0])].append({'kind': S(r[1]), 'kindAr': S(r[2]), 'ref': S(r[3]), 'refAr': S(r[4]), 'he': S(r[5]),
-                                'ar': S(r[6]), 'note': S(r[7]), 'noteAr': S(r[8]), 'dt': dt(S(r[3]), S(r[7])),
-                                'ed': edition(S(r[9]) + ('; התרגום לערבית' if S(r[6]) and S(r[1]) == 'משנה' else ''))[0],
-                                'edAr': edition(S(r[9]) + ('; התרגום לערבית' if S(r[6]) and S(r[1]) == 'משנה' else ''))[1]})
+                                'ar': S(r[6]), 'dt': dt(S(r[3]), S(r[7]))})
+        src = bycode[S(r[0])][-1]
+        both = bool(S(r[5]) and S(r[6]))   # a "translation pending" note is stale once both texts exist
+        src['note'] = None if both and S(r[7]) in PLACEHOLDER else S(r[7])
+        src['noteAr'] = None if both and S(r[8]) in PLACEHOLDER else S(r[8])
+        src['ed'], src['edAr'] = edition((S(r[9]) or '') + ('; התרגום לערבית' if S(r[6]) and S(r[1]) == 'משנה' else ''))
     for d in ctopics:
         dump(f'topics/{d["code"]}.json', dict(d, sources=bycode.get(d['code'], [])))
         d['nsources'] = len(bycode.get(d['code'], []))
@@ -428,18 +547,19 @@ def main(fa, fb, fc):
                      'dt': [dt(*[S(r[j]) for j in keep if j < len(r) and not re.search(r'ערבית|عربي', h[j] or '')]) for r in rr]}
         for r in rr:
             search.append(['x', f'{name}: {S(r[0])} {S(r[1]) or ""}', f'x/{slug}',
-                           norm(' '.join(filter(None, [S(c) for c in r])))])
+                           light(' '.join(filter(None, [S(c) for c in r])))])
     dump('appendices.json', app)
 
     used_dt.add('saadia')
-    meta = {'built': datetime.date.today().isoformat(), 'dating': {k: v for k, v in DT.items() if k in used_dt},
+    meta = {'built': datetime.date.today().isoformat(), 'weekly': parsha_weeks(parashot), 'dating': {k: v for k, v in DT.items() if k in used_dt},
             'parashot': plist, 'nakh': nak_list, 'suras': sura_list, 'hadith': coll_list, 'themes': themes,
             'counts': {'torahParallels': sum(len(v) for v in tpar.values()), 'nakhParallels': sum(len(v) for v in nbooks.values()),
                        'quranParallels': sum(len(v) for v in vpar.values()), 'topics': len(ctopics),
-                       'fromQuranOnBible': nfq_n + nfq_t,
+                       'fromQuranOnBible': nfq_n + nfq_t, 'quranDuplicatesHidden': ndup,
                        'hadith': sum(len(v) for v in hadith.values()),
                        'hadithTranslated': sum(c['translated'] for c in coll_list)}}
     dump('meta.json', meta)
+    share_pages(ctopics, plist, sura_list, nak_list)
     dump('search.json', search)
     print(json.dumps(meta['counts'], ensure_ascii=False))
 

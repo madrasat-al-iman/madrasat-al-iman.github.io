@@ -95,10 +95,12 @@ function focusMain() { const h = $('#app h1'); if (h) { h.setAttribute('tabindex
 function markTab(t) {
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
   $('#moreBtn').classList.toggle('on', ['n', 'x', 'h'].includes(t));
-  $('#more').classList.remove('open');
+  setMore(false);
 }
-$('#moreBtn').onclick = e => { e.stopPropagation(); $('#more').classList.toggle('open'); };
-document.addEventListener('click', () => $('#more').classList.remove('open'));
+const setMore = open => { $('#more').classList.toggle('open', open); $('#moreBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); };
+$('#moreBtn').onclick = e => { e.stopPropagation(); setMore(!$('#more').classList.contains('open')); };
+document.addEventListener('click', () => setMore(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { setMore(false); if (!$('#modal').hidden) { $('#modal').hidden = true; } } });
 
 /* ---------- settings ---------- */
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem('mh_' + k)) ?? d; } catch { return d; } },
@@ -109,7 +111,9 @@ function applySettings() {
   document.body.classList.toggle('lang-ar', LANG === 'ar');
   document.body.classList.toggle('darkmode', !!DARK);
   document.documentElement.style.setProperty('--fs', FS);
-  $$('.seg button').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
+  $$('.seg button').forEach(b => { b.classList.toggle('on', b.dataset.lang === LANG); b.setAttribute('aria-pressed', b.dataset.lang === LANG ? 'true' : 'false'); });
+  document.documentElement.lang = LANG === 'ar' ? 'ar' : 'he';
+  $('#dark').setAttribute('aria-pressed', DARK ? 'true' : 'false');
 }
 $$('.seg button').forEach(b => b.onclick = () => { LANG = b.dataset.lang; store.set('lang', LANG); applySettings(); });
 $('#fontUp').onclick = () => { FS = Math.min(1.6, +(FS + .1).toFixed(2)); store.set('fs', FS); applySettings(); };
@@ -118,7 +122,7 @@ $('#dark').onclick = () => { DARK = !DARK; store.set('dark', DARK); applySetting
 $('#searchForm').onsubmit = e => { e.preventDefault(); const q = $('#q').value.trim(); if (q) location.hash = '#/search/' + encodeURIComponent(q); };
 $('#modalClose').onclick = () => { $('#modal').hidden = true; };
 $('#modal').onclick = e => { if (e.target.id === 'modal') $('#modal').hidden = true; };
-function modal(html) { $('#modalBody').innerHTML = html; $('#modal').hidden = false; }
+function modal(html) { $('#modalBody').innerHTML = html; $('#modal').hidden = false; $('#modalClose').focus(); }
 
 /* ---------- study / share ---------- */
 $('#study').onclick = () => {
@@ -144,13 +148,15 @@ function cardActs(copyText, link, extra = '') {
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-copy]'); if (c) { copy(CARDTXT[c.dataset.copy] || ''); return; }
-  const l = e.target.closest('[data-link]'); if (l) { copy(location.origin + location.pathname + '#/' + l.dataset.link); return; }
+  const l = e.target.closest('[data-link]'); if (l) { copy(shareUrl(l.dataset.link)); return; }
   const p = e.target.closest('[data-play]'); if (p) { play(p.dataset.play, p); }
 });
-let AUDIO = null;
+let AUDIO = null, AUDIO_BTN = null;
 function play(key, btn) {
   if (AUDIO && AUDIO.key === key && !AUDIO.paused) { AUDIO.pause(); btn.textContent = '▶'; return; }
   if (AUDIO) AUDIO.pause();
+  if (AUDIO_BTN && AUDIO_BTN !== btn) AUDIO_BTN.textContent = '▶';
+  AUDIO_BTN = btn;
   const [s, a] = key.split(':');
   AUDIO = new Audio(`https://everyayah.com/data/Alafasy_128kbps/${pad(s, 3)}${pad(a, 3)}.mp3`); AUDIO.key = key;
   AUDIO.play().catch(() => toast('לא ניתן להשמיע · تعذّر التشغيل')); btn.textContent = '❚❚';
@@ -171,7 +177,7 @@ function parallelCard(p, route, showBible) {
     ${(p.textHe || p.textAr) ? `<div class="two"><div class="he col-he">${p.textHe ? pre(p.textHe) : PENDING_HE}</div><div class="ar col-ar${p.type === 'קוראן' ? ' q-text' : ''}" lang="ar">${pre(p.textAr)}</div></div>` : ''}
     ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
     ${(p.hadithHe || p.hadithAr) ? `<div class="two note small"><div class="col-he pre"><b>חדית׳ מתורגמים:</b> ${esc(p.hadithHe || '')}</div><div class="col-ar ar pre" lang="ar"><b>أحاديث مترجمة:</b> ${esc(p.hadithAr || '')}</div></div>` : ''}
-    ${p.unit || p.themes || p.id ? `<details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.unit ? `<div>${L('יחידה', 'الوحدة')}: ${esc(p.unit)}</div>` : ''}${p.themes ? `<div>${L('נושאים', 'الموضوعات')}: ${esc(p.themes)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}</details>` : ''}
+    ${p.unit || p.themes || p.id ? `<details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.unit ? `<div>${L('יחידה', 'الوحدة')}: ${esc(p.unit)}</div>` : ''}${p.themes ? `<div>${L('נושאים', 'الموضوعات')}: ${esc(p.themes)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}<div>${reportLink(p.id, route)}</div></details>` : ''}
   </div>`;
 }
 
@@ -188,15 +194,39 @@ function fqCard(p, showBible) {
   </div>`;
 }
 
+/* report an error / suggest a translation: opens a pre-filled GitHub issue */
+const ISSUES = 'https://github.com/yechiamporat/midreshet-haemuna/issues/new';
+function reportLink(id, route) {
+  const url = location.origin + location.pathname + '#/' + (route || '');
+  const q = `?title=${encodeURIComponent(`תיקון · تصويب: ${id || route || ''}`)}&body=${encodeURIComponent(`${url}\n\nמה צריך לתקן? · ما الذي يحتاج إلى تصويب؟\n`)}`;
+  return `<a href="${ISSUES + q}" target="_blank" rel="noopener">${L('דווח על טעות או הצע תרגום', 'أبلغ عن خطأ أو اقترح ترجمة')}</a>`;
+}
+
 /* ---------- views ---------- */
+/* this week's Torah portion (Land of Israel cycle), from the table built into meta.json */
+function weeklyParasha() {
+  const t = new Date(); const today = `${t.getFullYear()}-${pad(t.getMonth() + 1, 2)}-${pad(t.getDate(), 2)}`;
+  const w = (META.weekly || []).find(([d]) => d >= today);
+  if (!w || !w[1].length) return null;
+  return { date: w[0], ps: w[1].map(i => META.parashot.find(p => p.i === i)).filter(Boolean) };
+}
 async function viewHome() {
   markTab(''); setTitle('');
   const c = META.counts;
-  const vay = META.parashot.find(p => p.name === 'ויצא');
+  const wk = weeklyParasha(), vayeshev = META.parashot.find(p => p.name === 'וישב');
+  const th = await J('themes.json').catch(() => null);
+  const star = th && th.topics.find(t => t.code === STARTERS[0]);
+  const gates = [
+    wk && wk.ps.length ? `<a class="bigcard gate" href="#/b/${wk.ps[0].i}"><div class="muted small">${L('פרשת השבוע', 'برشا الأسبوع')}</div><h3>${L(esc(wk.ps.map(p => p.name).join('–')), esc(wk.ps.map(p => stripPar(p.nameAr || '')).join('–')))}</h3><div class="muted">${L('הפרשה עם המקבילות מן הקוראן ומן החדית׳', 'البرشا مع توازياتها من القرآن والحديث')}</div></a>` : '',
+    vayeshev ? `<a class="bigcard gate" href="#/a/12"><div class="muted small">${L('סיפור אחד, שני ספרים', 'قصة واحدة في كتابين')}</div><h3>${L('יוסף: סורה 12 מול פרשת וישב', 'يوسف: سورة ١٢ قبالة برشا «فَيِّيشِف»')}</h3><div class="muted">${L('הסורה כולה לצד ספר בראשית, פסוק מול פסוק', 'السورة كلها إلى جانب سفر التكوين، آيةً آية')}</div></a>` : '',
+    star ? `<a class="bigcard gate" href="#/c/${star.code}"><div class="muted small">${L('נושא מומלץ לחברותא', 'موضوع مقترح للدراسة المشتركة')}</div><h3>${L(esc(star.title), esc(star.titleAr || ''))}</h3><div class="muted">${L(`${star.nsources} מקורות במלואם, עם שאלות לשיחה`, `${arNum(star.nsources)} مصدرًا كاملًا، مع أسئلة للحوار`)}</div></a>` : '',
+    `<a class="bigcard gate" href="#/x/pearls"><div class="muted small">${L('קצר ומפתיע', 'قصير ومدهش')}</div><h3>${L('פנינים מקבילות', 'لآلئ متوازية')}</h3><div class="muted">${L('מאמר חז״ל וחדית׳ שאומרים כמעט אותו דבר', 'قول من أدب الحكماء وحديث يقولان الشيء نفسه تقريبًا')}</div></a>`].filter(Boolean);
   app.innerHTML = `<div class="page">
     <h1>מדרשת האמונה <span class="ar" lang="ar" style="color:var(--gold)">مدرسة الإيمان</span></h1>
     <div class="two"><p class="col-he">מאגר דו־לשוני, עברית וערבית, של מקבילות בין התורה, הנביאים והכתובים וספרות חז״ל לבין הקוראן והחדית׳. כל מקבילה מובאת בנוסח המקור ובתרגום, עם הסבר הקשר ותיעוד המקורות.</p>
     <p class="col-ar ar" lang="ar">قاعدة بيانات ثنائية اللغة، بالعبرية والعربية، للتوازيات بين التوراة والأنبياء والكتب وأدب الحكماء وبين القرآن والحديث. يُعرض كل توازٍ بنصه الأصلي وترجمته، مع بيان الصلة وتوثيق المصادر.</p></div>
+    <h2>${L('מאיפה מתחילים?', 'من أين نبدأ؟')}</h2><div class="grid-cards gates">${gates.join('')}</div>
+    <h2>${L('במאגר', 'في القاعدة')}</h2>
     <div class="grid-cards">
       <a class="bigcard" href="#/c"><h3>${L('נושאים לעיון', 'موضوعات للتأمل')}</h3><div class="stat">${c.topics}</div><div class="muted">${L('נושאים וסיפורים, עם המקורות במלואם בשתי השפות', 'موضوعات وقصص مع نصوص المصادر كاملة باللغتين')}</div></a>
       <a class="bigcard" href="#/a"><h3>${L('הקוראן ותפסיר עם הספר', 'القرآن وتفسير أهل الكتاب')}</h3><div class="stat">114</div><div class="muted">${L(`סורות בערבית ובתרגום עברי, עם ${c.quranParallels} מקבילות לפי פסוק`, `سورة بالعربية وبترجمة عبرية، مع ${arNum(c.quranParallels)} توازيًا حسب الآية`)}</div></a>
@@ -205,7 +235,6 @@ async function viewHome() {
       <a class="bigcard" href="#/x"><h3>${L('נספחים', 'ملاحق')}</h3><div class="muted">${L('מחלוקות יסוד · שורשים תאומים · פנינים · צמתים היסטוריים', 'خلافات أساسية · جذور توأم · لآلئ · ملتقيات تاريخية')}</div></a>
       <a class="bigcard" href="#/h"><h3>${L('חדית׳', 'الحديث')}</h3><div class="stat">${c.hadithTranslated}</div><div class="muted">${L(`חדית׳ מתורגמים לעברית, מתוך ${c.hadith} בנוסח הערבי`, `حديثًا مترجمًا إلى العبرية، من أصل ${arNum(c.hadith)} بالنص العربي`)}</div></a>
     </div>
-    ${vay ? `<h2>${L('להתחלה: פרשת ויצא', 'للبداية: برشا «فَيِّيتسي» – حلم يعقوب')}</h2><p><a class="btn primary" href="#/b/${vay.i}">${L('לפרשת ויצא – חלום יעקב (בראשית כח–לב)', 'إلى برشا «فَيِّيتسي» – حلم يعقوب (التكوين ٢٨–٣٢)')}</a> <a class="btn" href="#/c">${L('לנושאים לעיון', 'إلى موضوعات للتأمل')}</a></p>` : ''}
   </div>`;
 }
 
@@ -227,7 +256,7 @@ async function viewAbout() {
     <h3>איך נבדק המאגר</h3>
     <ul><li>מראי המקום בקוראן נבדקו אוטומטית מול נוסח הקוראן.</li><li>כל ציטוט מן החדית׳ אותר מילה במילה בנוסח sunnah.com.</li><li>נוסח התפסיר (אבן כת׳יר, אלטברי, אבן עאשור) נשלף מקבצים פתוחים (spa5k/tafsir_api) ונבדק מול הדפוס המקובל.</li><li>מקורות חז״ל נבדקו מול ספריא. העבודה נעשתה בסיוע כלי בינה מלאכותית, ונבדקת בידי אדם.</li></ul>
     <p class="small muted">גופנים: Amiri, Amiri Quran, Frank Ruhl Libre, Heebo – ברישיון SIL Open Font License.</p>
-    <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה.</p>
+    <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה: <a href="${ISSUES}" target="_blank" rel="noopener">דיווח על טעות או הצעת תרגום</a> (דרך GitHub). גם בכל כרטיס מקבילה, תחת „פרטים“, יש קישור לדיווח.</p>
    </div>
    <div class="col-ar ar" lang="ar">
     <p><b>مدرسة الإيمان</b> قاعدة بيانات ثنائية اللغة، بالعبرية والعربية، تضع مصادر اليهودية والإسلام بعضها قبالة بعض: التوراة والأنبياء والكتب وأدب الحكماء قبالة القرآن والحديث. وهي معدّة للدراسة المشتركة («الحَبروتا») بين اليهود والمسلمين، وللتأمل باحترام في أوجه الشبه والاختلاف بين التقليدين.</p>
@@ -242,7 +271,7 @@ async function viewAbout() {
     <h3>كيف رُوجعت القاعدة</h3>
     <ul><li>رُوجعت الإحالات القرآنية آليًّا على نص المصحف.</li><li>كل نص حديث عُثر عليه حرفيًّا في نص sunnah.com.</li><li>نص التفسير (ابن كثير والطبري وابن عاشور) مأخوذ من ملفات مفتوحة (spa5k/tafsir_api) ومراجَع على الطبعة المتداولة.</li><li>رُوجعت مصادر الحكماء على «سفاريا». أُنجز العمل بمساعدة أدوات ذكاء اصطناعي، ويخضع لمراجعة بشرية.</li></ul>
     <p class="small muted">الخطوط: Amiri وAmiri Quran وFrank Ruhl Libre وHeebo – برخصة SIL Open Font License.</p>
-    <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب.</p>
+    <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب: <a href="${ISSUES}" target="_blank" rel="noopener">الإبلاغ عن خطأ أو اقتراح ترجمة</a> (عبر GitHub). وفي كل بطاقة توازٍ، تحت «تفاصيل»، رابط للإبلاغ أيضًا.</p>
    </div></div></div>`;
 }
 
@@ -273,7 +302,7 @@ function buildNav(page, defs, unitSel) {
 }
 async function viewTorah(i, anchor) {
   markTab('b');
-  if (!i) i = (META.parashot.find(p => p.name === 'ויצא') || META.parashot[0]).i;
+  if (!i) i = (weeklyParasha()?.ps[0] || META.parashot[0]).i;
   app.innerHTML = `<div class="layout">${torahSide(i)}<div class="page"><div class="loading">טוען… · جارٍ التحميل…</div></div></div>`;
   const d = await J(`torah/${pad(i, 2)}.json`);
   const P = d.parasha; setTitle(`פרשת ${P.name} · ${stripPar(P.nameAr)}`);
@@ -309,6 +338,7 @@ async function viewTorah(i, anchor) {
     <h1>${L(`פרשת ${esc(P.name)}`, `برشا ${esc(P.nameAr || '')}`)}</h1>
     <div class="muted">${L(`${esc(P.book)} ${ref(P.from[0], P.from[1])} – ${ref(P.to[0], P.to[1])} · ${P.verses} פסוקים · ${d.parallels.length + (d.fromQuran || []).length} מקבילות${d.saadia.length ? ` · ${d.saadia.length} הערות רס״ג` : ''}`,
       `${esc(P.bookAr || '')} ${refAr(P.from[0], P.from[1])} – ${refAr(P.to[0], P.to[1])} · ${arNum(P.verses)} آية · ${arNum(d.parallels.length + (d.fromQuran || []).length)} توازيًا`)}</div>
+    ${shareBar(`פרשת ${P.name}`, `برشا ${stripPar(P.nameAr || '')}`, `${P.book} ${ref(P.from[0], P.from[1])} – ${ref(P.to[0], P.to[1])}: התורה עם המקבילות מן הקוראן ומן החדית׳`, `${P.bookAr || ''} – التوراة مع توازياتها من القرآن والحديث`, `b/${i}`)}
     ${NAV}
     ${body}
     ${P.questions || P.questionsAr ? `<div class="qs" id="sec-qs"><h3>${L('לשולחן שבת: שאלות לשיחה וללימוד משותף', 'لمائدة السبت: أسئلة للحوار والدراسة المشتركة')}</h3><div class="two"><div class="pre col-he">${esc(P.questions || '')}</div><div class="pre col-ar ar" lang="ar">${P.questionsAr ? esc(P.questionsAr) : PENDING}</div></div></div>` : ''}
@@ -340,7 +370,7 @@ async function viewQuran(su, v) {
       ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, p.srcHe, p.srcAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${su}/${p.a}`)}</div>
       ${(p.srcHe || p.srcAr) ? `<div class="two"><div class="he col-he">${esc(p.srcHe)}</div><div class="ar col-ar" lang="ar">${p.srcAr ? esc(p.srcAr) : PENDING}</div></div>` : ''}
       ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
-      ${p.context || p.edition ? `<details class="more"><summary>${L('הקשר רחב ומהדורה', 'السياق والطبعة')}</summary>${esc(p.context || '')} ${esc(p.edition || '')}</details>` : ''}
+      <details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.context ? `<div>${L('הקשר רחב', 'السياق الأوسع')}: ${esc(p.context)}</div>` : ''}${p.edition ? `<div>${L('מהדורה', 'الطبعة')}: ${esc(p.edition)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}<div>${reportLink(p.id, `a/${su}/${p.a}`)}</div></details>
     </div>` : `<div class="card">
       <div class="card-h"><div><span class="t col-he">${rng(p)} <span class="muted">⇄</span> <a href="#/${p.route}">${esc(p.ref)}</a></span>${(p.refAr || refAr(p.ref)) ? `<div class="t col-ar ar" lang="ar">${esc(d.name)} ${rng(p)} ⇄ <a href="#/${p.route}">${esc(p.refAr || refAr(p.ref))}</a></div>` : ''}
       <div class="chips"><span class="chip">${tr('תנ״ך', TYPE_AR)}</span>${strengthChip(p.strength)}</div></div>
@@ -351,6 +381,7 @@ async function viewQuran(su, v) {
   $('.page', app).innerHTML = `<div class="crumbs">${L('הקוראן ותפסיר עם הספר', 'القرآن وتفسير أهل الكتاب')}</div>
     <h1>${L(`סורה ${su}: ${esc(SURA_HE[su])}`, `سورة ${arNum(su)}: ${esc(d.name)}`)}</h1>
     <div class="muted">${L(`${d.verses.length} פסוקים · ${d.parallels.length + d.bible.length} מקבילות`, `${arNum(d.verses.length)} آية · ${arNum(d.parallels.length + d.bible.length)} توازيًا`)}</div>
+    ${shareBar(`סורה ${su}: ${SURA_HE[su]}`, `سورة ${d.name}`, 'הסורה בערבית ובתרגום עברי, עם המקבילות מן המקרא ומספרות חז״ל', 'السورة بالعربية وبترجمة عبرية، مع التوازيات من المقرا وأدب الحكماء', `a/${su}`)}
     ${NAV}
     <div class="verses">${d.verses.map(x => `<div class="vrow" id="v-${x.v}">
       <div class="he layer-text"><a class="num" href="#/a/${su}/${x.v}">${x.v}</a>${esc(x.he)}</div>
@@ -388,12 +419,15 @@ const CFIELDS = [['quran', 'קוראן', 'القرآن'], ['hadith', 'חדית׳
   ['deepen', 'העמקת הדמיון והשוני', 'تعميق أوجه الشبه والاختلاف']];
 const GROUP_AR = { 'אמונה': 'الإيمان', 'פולחן': 'العبادة', 'סיפורים': 'القصص', 'מוסר': 'الأخلاق', 'משפט': 'الشريعة والقضاء', 'משפחה וחברה': 'الأسرة والمجتمع', 'אחרית הימים': 'آخر الزمان', 'ארץ ומקום': 'الأرض والمكان', 'חברה ומשפט': 'المجتمع والشريعة', 'נבואה וכתבי הקודש': 'النبوة والكتب المقدسة', 'מלחמה ושלום': 'الحرب والسلام', 'צדקה וכלכלה': 'الصدقة والاقتصاد' };
 const STARTERS = ['N09', 'S04', 'N02', 'N04', 'N29', 'S09'];
+/* pages that have a static share page (with their own title and description for WhatsApp / search engines) */
+const shareUrl = route => /^(c\/[A-Z]\d+|b\/\d+|a\/\d+|n\/\d+)$/.test(route)
+  ? location.origin + location.pathname.replace(/index\.html$/, '') + 'share/' + route + '.html' : location.origin + location.pathname + '#/' + route;
 function shareBar(title, titleAr, summary, summaryAr, route) {
-  const base = location.origin + location.pathname + '#/' + route;
+  const base = shareUrl(route), sep = '?';
   const msg = {
-    he: `${title}\n${clip(summary, 220)}\nמדרשת האמונה – לימוד משותף:\n${base}?l=he`,
-    ar: `${titleAr}\n${clip(summaryAr, 220)}\nمدرسة الإيمان – دراسة مشتركة:\n${base}?l=ar`,
-    both: `${title} · ${titleAr}\n${clip(summary, 160)}\n${clip(summaryAr, 160)}\nמדרשת האמונה · مدرسة الإيمان:\n${base}?l=both` };
+    he: `${title}\n${clip(summary, 220)}\nמדרשת האמונה – לימוד משותף:\n${base}${sep}l=he`,
+    ar: `${titleAr}\n${clip(summaryAr, 220)}\nمدرسة الإيمان – دراسة مشتركة:\n${base}${sep}l=ar`,
+    both: `${title} · ${titleAr}\n${clip(summary, 160)}\n${clip(summaryAr, 160)}\nמדרשת האמונה · مدرسة الإيمان:\n${base}${sep}l=both` };
   const wa = k => `https://wa.me/?text=${encodeURIComponent(msg[k])}`;
   return `<div class="sharebar"><span class="lbl">${L('שיתוף לקבוצת הלימוד', 'مشاركة مع مجموعة الدراسة')}:</span>
     <a href="${wa('he')}" target="_blank" rel="noopener">${L('וואטסאפ – בעברית', 'واتساب – بالعبرية')}</a><a href="${wa('ar')}" target="_blank" rel="noopener">${L('וואטסאפ – בערבית', 'واتساب – بالعربية')}</a><a href="${wa('both')}" target="_blank" rel="noopener">${L('דו־לשוני', 'ثنائي اللغة')}</a>
@@ -416,7 +450,7 @@ async function viewThemes(code, anchor) {
     const srcCard = s => `<div class="src" id="s-${s.k}">
           <div class="h"><div class="refs"><span class="col-he">${linkQuran(s.ref)}</span><span class="col-ar ar" lang="ar">${esc(s.refAr || '')}</span></div>
           ${cardActs([s.ref, s.refAr, s.he, s.ar].filter(Boolean).join('\n'), `c/${code}/s-${s.k}`)}</div>
-          <div class="two"><div class="he col-he">${s.he ? esc(s.he) : PENDING_HE}</div><div class="ar col-ar${s.kind === 'קוראן' ? ' q-text' : ''}" lang="ar">${s.ar ? esc(s.ar) : PENDING}</div></div>
+          <div class="two"><div class="he col-he">${s.he ? pre(s.he) : PENDING_HE}</div><div class="ar col-ar${s.kind === 'קוראן' ? ' q-text' : ''}" lang="ar">${s.ar ? pre(s.ar) : PENDING}</div></div>
           ${s.note || s.noteAr ? `<div class="two small note"><div class="col-he">${esc(s.note || '')}</div><div class="col-ar ar" lang="ar">${esc(s.noteAr || '')}</div></div>` : ''}
           ${dtLine(s.dt)}${s.ed ? `<div class="ed">${L(esc(s.ed), esc(s.edAr || ''))}</div>` : ''}</div>`;
     app.innerHTML = `<div class="page"><div class="crumbs"><a href="#/c">${L('נושאים לעיון', 'موضوعات للتأمل')}</a> · ${t.group ? tr(t.group, GROUP_AR) : ''}</div>
@@ -544,18 +578,19 @@ async function viewHadith(i, n) {
   const d = await J(`hadith/${pad(i, 2)}.json`);
   const cAr = COLL_AR[d.collection] || '';
   setTitle(`${d.collection} · ${cAr}`);
-  let only = store.get('hTr', true);
+  let only = store.get('hTr', true), LIMIT = 200;
   const render = () => {
     const q = norm($('#hf')?.value || '');
     const items = d.items.filter(x => (!only || x.he) && (!q || norm(x.n + ' ' + (x.he || '') + ' ' + x.ar).includes(q)));
-    $('#hl').innerHTML = items.slice(0, 200).map(x => `<div class="card" id="h-${esc(x.n)}"><div class="card-h"><div><span class="t">${L(`${esc(d.collection)} ${esc(x.n)}`, `${esc(cAr)} ${esc(x.n)}`)}</span> <span class="chip weak">${esc(x.book || '')}</span></div>${cardActs([`${d.collection} ${x.n} · ${cAr} ${x.n}`, x.he, x.ar].filter(Boolean).join('\n'), `h/${i}/${x.n}`)}</div>
-      <div class="two"><div class="he col-he">${x.he ? esc(x.he) : PENDING_HE}</div><div class="ar col-ar" lang="ar">${esc(x.ar)}</div></div></div>`).join('') + (items.length > 200 ? `<p class="muted">${L(`מוצגים 200 מתוך ${items.length}`, `يُعرض ٢٠٠ من ${arNum(items.length)}`)}</p>` : '');
+    $('#hl').innerHTML = items.slice(0, LIMIT).map(x => `<div class="card" id="h-${esc(x.n)}"><div class="card-h"><div><span class="t">${L(`${esc(d.collection)} ${esc(x.n)}`, `${esc(cAr)} ${esc(x.n)}`)}</span> ${x.book ? `<span class="chip weak">${L(esc(x.book), esc(x.bookAr || ''))}</span>` : ''}</div>${cardActs([`${d.collection} ${x.n} · ${cAr} ${x.n}`, x.he, x.ar].filter(Boolean).join('\n'), `h/${i}/${x.n}`)}</div>
+      <div class="two"><div class="he col-he">${x.he ? esc(x.he) : PENDING_HE}</div><div class="ar col-ar" lang="ar">${esc(x.ar)}</div></div></div>`).join('') + (items.length > LIMIT ? `<p class="muted">${L(`מוצגים ${LIMIT} מתוך ${items.length}`, `يُعرض ${arNum(LIMIT)} من ${arNum(items.length)}`)} <button type="button" class="btn" id="hmore">${L('טען עוד', 'اعرض المزيد')}</button></p>` : '');
+    const hm = $('#hmore'); if (hm) hm.onclick = () => { LIMIT += 200; render(); };
     $('#hc').innerHTML = L(`${items.length} חדית׳`, `${arNum(items.length)} حديثًا`);
   };
   app.innerHTML = `<div class="page"><div class="crumbs"><a href="#/h">${L('חדית׳', 'الحديث')}</a></div><h1>${L(esc(d.collection), esc(cAr))}</h1>
     <div class="filter"><input id="hf" type="search" placeholder="מספר או מילה · رقم أو كلمة" value="${n ? esc(n) : ''}"><label><input type="checkbox" id="ho" ${only ? 'checked' : ''}> ${L('רק מתורגמים', 'المترجمة فقط')}</label><span class="muted small" id="hc"></span></div><div id="hl"></div></div>`;
   if (n) { only = false; $('#ho').checked = false; }
-  $('#hf').oninput = render; $('#ho').onchange = e => { only = e.target.checked; store.set('hTr', only); render(); };
+  $('#hf').oninput = () => { LIMIT = 200; render(); }; $('#ho').onchange = e => { only = e.target.checked; store.set('hTr', only); render(); };
   render();
   if (n) { const el = document.getElementById('h-' + n); el && el.scrollIntoView({ block: 'start' }); }
 }
@@ -566,18 +601,47 @@ async function viewSearch(q) {
   markTab(''); setTitle('חיפוש · بحث: ' + q);
   $('#q').value = q;
   app.innerHTML = `<div class="page"><h1>${L('חיפוש', 'بحث')}: ${esc(q)}</h1><div class="loading">…</div></div>`;
-  const [idx, qi] = await Promise.all([J('search.json'), J('search_quran.json')]);
+  const idx = await J('search.json');
+  if (!idx.folded) idx.folded = idx.map(r => fold(r[3]));
   const words = norm(q).split(' ').filter(Boolean);
   const hit = t => words.every(w => t.includes(w));
-  const res = idx.filter(r => hit(r[3]) || hit(norm(r[1])));
-  const qv = qi.filter(r => hit(r[2]) || hit(r[3]));
+  const res = []; idx.forEach((r, k) => { if (hit(idx.folded[k]) || hit(norm(r[1]))) res.push([...r, idx.folded[k]]); });
   const byKind = {}; res.forEach(r => (byKind[r[0]] = byKind[r[0]] || []).push(r));
-  const snip = t => { const i = t.indexOf(words[0]); return esc(t.slice(Math.max(0, i - 60), i + 140)); };
-  $('.page', app).innerHTML = `<h1>${L('חיפוש', 'بحث')}: ${esc(q)}</h1><p class="muted">${L(`${res.length} תוצאות · ${qv.length} פסוקי קוראן`, `${arNum(res.length)} نتيجة · ${arNum(qv.length)} آية`)}</p>
-    ${Object.entries(byKind).map(([k, rs]) => `<h2>${L(...KIND[k])} <span class="muted small">(${rs.length})</span></h2><div class="results">${rs.slice(0, 150).map(r =>
-      `<a class="r" href="#/${r[2]}"><span class="k">${L(...KIND[r[0]])}</span>${esc(r[1])}<span class="s">${snip(r[3])}</span></a>`).join('')}</div>`).join('')}
-    ${qv.length ? `<h2>${L('פסוקי קוראן', 'آيات قرآنية')} <span class="muted small">(${qv.length})</span></h2><div class="results">${qv.slice(0, 150).map(r => `<a class="r" href="#/a/${r[0]}/${r[1]}"><span class="k"><bdi dir="ltr">${r[0]}:${r[1]}</bdi></span><span class="s"><span class="l-he">${esc(r[3].slice(0, 200))}</span><span class="l-ar" lang="ar">${esc(r[2].slice(0, 200))}</span></span></a>`).join('')}</div>` : ''}
-    ${!res.length && !qv.length ? `<p>${L('לא נמצאו תוצאות. נסו מילה אחרת, בלי ניקוד.', 'لم يُعثر على نتائج. جرّبوا كلمة أخرى دون تشكيل.')}</p>` : ''}`;
+  const kinds = Object.keys(byKind);
+  let only = '';
+  const draw = qv => {
+    const shown = kinds.filter(k => !only || only === k);
+    $('#sres').innerHTML = `${shown.map(k => `<h2>${L(...KIND[k])} <span class="muted small">(${byKind[k].length})</span></h2><div class="results">${byKind[k].slice(0, 150).map(r =>
+      `<a class="r" href="#/${r[2]}"><span class="k">${L(...KIND[r[0]])}</span>${esc(r[1])}<span class="s">${snip(r[3], r[4], words)}</span></a>`).join('')}</div>`).join('')}
+      ${(!only || only === 'q') && qv && qv.length ? `<h2>${L('פסוקי קוראן', 'آيات قرآنية')} <span class="muted small">(${qv.length})</span></h2><div class="results">${qv.slice(0, 150).map(r => `<a class="r" href="#/a/${r[0]}/${r[1]}"><span class="k"><bdi dir="ltr">${r[0]}:${r[1]}</bdi></span><span class="s"><span class="l-he">${snip(r[3], fold(r[3]), words, 200)}</span><span class="l-ar" lang="ar">${snip(r[2], fold(r[2]), words, 200)}</span></span></a>`).join('')}</div>` : ''}
+      ${qv === null ? `<p class="muted">${L('מחפש גם בפסוקי הקוראן…', 'جارٍ البحث في آيات القرآن أيضًا…')}</p>` : ''}
+      ${qv && !res.length && !qv.length ? `<p>${L('לא נמצאו תוצאות. נסו מילה אחרת, בלי ניקוד.', 'لم يُعثر على نتائج. جرّبوا كلمة أخرى دون تشكيل.')}</p>` : ''}`;
+  };
+  const chips = qv => `<div class="gchips" role="group" aria-label="סינון תוצאות · تصفية النتائج"><button type="button" class="${only ? '' : 'on'}" data-k="">${L(`הכל (${res.length + (qv ? qv.length : 0)})`, `الكل (${arNum(res.length + (qv ? qv.length : 0))})`)}</button>${kinds.map(k => `<button type="button" data-k="${k}" class="${only === k ? 'on' : ''}">${L(`${KIND[k][0]} (${byKind[k].length})`, `${KIND[k][1]} (${arNum(byKind[k].length)})`)}</button>`).join('')}${qv && qv.length ? `<button type="button" data-k="q" class="${only === 'q' ? 'on' : ''}">${L(`פסוקי קוראן (${qv.length})`, `آيات قرآنية (${arNum(qv.length)})`)}</button>` : ''}</div>`;
+  const paint = qv => {
+    $('.page', app).innerHTML = `<h1>${L('חיפוש', 'بحث')}: ${esc(q)}</h1>${chips(qv)}<div id="sres"></div>`;
+    $('.gchips', app).onclick = e => { const b = e.target.closest('button'); if (!b) return; only = b.dataset.k; $$('.gchips button', app).forEach(x => x.classList.toggle('on', x === b)); draw(qv); };
+    draw(qv);
+  };
+  paint(null);                                   // the large Quran index is fetched after the first results are on screen
+  const qi = await J('search_quran.json');
+  if (!qi.folded) qi.folded = qi.map(r => [fold(r[2]), fold(r[3])]);
+  const qv = qi.filter((r, k) => hit(qi.folded[k][0]) || hit(qi.folded[k][1]));
+  if (location.hash.startsWith('#/search/')) paint(qv);
+}
+/* letter folding that keeps string length, so a match in the folded text marks the same span in the displayed text */
+const FOLD = { 'إ': 'ا', 'أ': 'ا', 'آ': 'ا', 'ٱ': 'ا', 'ؤ': 'و', 'ئ': 'ي', 'ى': 'ي', 'ة': 'ه', '״': '"', '׳': "'", '־': ' ' };
+const fold = t => (t || '').toLowerCase().replace(/[إأآٱؤئىة״׳־]/g, c => FOLD[c]);
+function snip(t, f, words, n = 140) {
+  t = t || ''; f = f || fold(t);
+  const i = Math.max(0, f.indexOf(words[0]));
+  const a = Math.max(0, i - 60), b = Math.min(t.length, i + n);
+  let out = '', pos = a;
+  const marks = [];
+  words.forEach(w => { let j = f.indexOf(w, a); while (j >= 0 && j < b) { marks.push([j, Math.min(b, j + w.length)]); j = f.indexOf(w, j + w.length); } });
+  marks.sort((x, y) => x[0] - y[0]);
+  for (const [x, y] of marks) { if (x < pos) continue; out += esc(t.slice(pos, x)) + '<mark>' + esc(t.slice(x, y)) + '</mark>'; pos = y; }
+  return (a > 0 ? '… ' : '') + out + esc(t.slice(pos, b)) + (b < t.length ? ' …' : '');
 }
 
 function scrollToAnchor(id) {
@@ -588,6 +652,8 @@ function scrollToAnchor(id) {
 
 /* ---------- router ---------- */
 async function route() {
+  for (const k in CARDTXT) delete CARDTXT[k];
+  if (AUDIO) { AUDIO.pause(); AUDIO = null; }
   let h = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
   const lm = h.match(/\?l=(he|ar|both)$/);
   if (lm) { h = h.slice(0, lm.index); LANG = lm[1]; store.set('lang', LANG); applySettings(); }
@@ -607,6 +673,7 @@ async function route() {
   } catch (e) { console.error(e); app.innerHTML = `<div class="page">${L('אירעה שגיאה בטעינה.', 'حدث خطأ في التحميل.')} <a href="#/">${L('לדף הבית', 'إلى الصفحة الرئيسية')}</a></div>`; }
 }
 window.addEventListener('hashchange', route);
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
 (async () => {
   applySettings();
   META = await J('meta.json');

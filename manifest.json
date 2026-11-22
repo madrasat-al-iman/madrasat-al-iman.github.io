@@ -1,0 +1,25 @@
+{
+ "name": "מדרשת האמונה · مدرسة الإيمان",
+ "short_name": "מדרשת האמונה",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "dir": "rtl",
+ "lang": "he",
+ "background_color": "#f7f2e7",
+ "theme_color": "#1b2f4a",
+ "description": "מקבילות ולימוד משותף: תורה, קוראן, חז״ל וחדית׳ · توازيات ودراسة مشتركة",
+ "icons": [
+  {
+   "src": "assets/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "assets/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any maskable"
+  }
+ ]
+}
