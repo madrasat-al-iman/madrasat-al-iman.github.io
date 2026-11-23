@@ -17,7 +17,7 @@ def site_url():
     try:
         return json.load(open(os.path.join(ROOT, 'site.json'), encoding='utf-8'))['url'].rstrip('/') + '/'
     except (OSError, KeyError, ValueError):
-        return 'https://yechiamporat.github.io/midreshet-haemuna/'
+        return 'https://madrasat-al-iman.github.io/'
 
 
 def J(p):

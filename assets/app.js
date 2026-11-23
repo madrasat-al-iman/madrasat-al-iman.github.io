@@ -127,7 +127,7 @@ function modal(html) { $('#modalBody').innerHTML = html; $('#modal').hidden = fa
 /* ---------- study / share ---------- */
 $('#study').onclick = () => {
   const url = location.href;
-  const room = 'https://meet.jit.si/midreshet-haemuna-' + Math.random().toString(36).slice(2, 8);
+  const room = 'https://meet.jit.si/madrasat-al-iman-' + Math.random().toString(36).slice(2, 8);
   const where = document.title.replace(' · מדרשת האמונה · مدرسة الإيمان', '');
   const text = `הזמנה ללימוד בחברותא · دعوة إلى دراسة مشتركة — מדרשת האמונה · مدرسة الإيمان\n${where}\n${url}\nחדר וידאו · غرفة فيديو (Jitsi): ${room}`;
   modal(`<h2>${L('לימוד בחברותא', 'دراسة مشتركة (حَبروتا)')}</h2>
@@ -195,7 +195,7 @@ function fqCard(p, showBible) {
 }
 
 /* report an error / suggest a translation: opens a pre-filled GitHub issue */
-const ISSUES = 'https://github.com/yechiamporat/midreshet-haemuna/issues/new';
+const ISSUES = 'https://github.com/madrasat-al-iman/madrasat-al-iman.github.io/issues/new';
 function reportLink(id, route) {
   const url = location.origin + location.pathname + '#/' + (route || '');
   const q = `?title=${encodeURIComponent(`תיקון · تصويب: ${id || route || ''}`)}&body=${encodeURIComponent(`${url}\n\nמה צריך לתקן? · ما الذي يحتاج إلى تصويب؟\n`)}`;
