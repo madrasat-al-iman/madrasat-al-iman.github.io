@@ -143,13 +143,15 @@ $('#study').onclick = () => {
 const CARDTXT = {};
 function cardActs(copyText, link, extra = '') {
   const id = 'c' + Math.random().toString(36).slice(2, 9);
-  CARDTXT[id] = copyText;
-  return `<div class="acts">${extra}<button type="button" data-copy="${id}">${L('העתק', 'نسخ')}</button>${link ? `<button type="button" data-link="${esc(link)}">${L('קישור', 'رابط')}</button>` : ''}</div>`;
+  CARDTXT[id] = link ? `${copyText}\n${shareUrl(link)}` : copyText;
+  return `<div class="acts">${extra}<button type="button" data-copy="${id}" title="העתק את המקבילה עם מראי המקום וקישור · انسخ التوازي مع المراجع والرابط">${L('העתק מקבילה', 'انسخ التوازي')}</button>${link ? `<button type="button" data-link="${esc(link)}">${L('קישור', 'رابط')}</button>` : ''}</div>`;
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-copy]'); if (c) { copy(CARDTXT[c.dataset.copy] || ''); return; }
   const l = e.target.closest('[data-link]'); if (l) { copy(shareUrl(l.dataset.link)); return; }
-  const p = e.target.closest('[data-play]'); if (p) { play(p.dataset.play, p); }
+  const p = e.target.closest('[data-play]'); if (p) { play(p.dataset.play, p); return; }
+  if (e.target.closest('[data-print]')) { window.print(); return; }
+  const ct = e.target.closest('[data-cite]'); if (ct) { copy(citation(ct.dataset.cite, ct.dataset.citeAr, ct.dataset.citeRoute ? shareUrl(ct.dataset.citeRoute) : location.origin + location.pathname.replace(/index\.html$/, ''))); }
 });
 let AUDIO = null, AUDIO_BTN = null;
 function play(key, btn) {
@@ -238,8 +240,9 @@ async function viewHome() {
   </div>`;
 }
 
-async function viewAbout() {
+async function viewAbout(anchor) {
   markTab('about'); setTitle('אודות · عن المشروع');
+  const home = location.origin + location.pathname.replace(/index\.html$/, '');
   const c = META.counts;
   app.innerHTML = `<div class="page"><h1>${L('אודות', 'عن المشروع')}</h1>
   <div class="two">
@@ -250,11 +253,21 @@ async function viewAbout() {
     <li><b>הקוראן ותפסיר עם הספר</b> – הקוראן לפי הסדר, בערבית ובתרגום עברי, עם המקבילות מן המקרא ומספרות חז״ל.</li>
     <li><b>התורה ופירוש האסלאם</b> – התורה לפי הפרשות, בנוסח המסורה ובתרגום ון־דייק, עם המקבילות מן הקוראן ומן החדית׳ והערות מתפסיר רס״ג.</li>
     <li><b>נביאים וכתובים, נספחים וחדית׳</b>.</li></ul>
+    <h3 id="method">עקרונות העבודה והתרגום</h3>
+    <ul><li><b>מקור ותרגום זה לצד זה.</b> כל טקסט מובא בלשון המקור ובתרגום: המקרא בנוסח המסורה ובתרגום ון־דייק לערבית; הקוראן בכתיב העות׳מאני ובתרגום עברי חדש שהוכן למאגר; החדית׳ בנוסח הערבי ובתרגום עברי של המאגר; מקורות חז״ל בלשונם ובתרגום לערבית.</li>
+    <li><b>ציטוט מלא.</b> המקורות מובאים ברצף עד סוף העניין, בלי השמטות באמצע. קיצור נעשה רק כשההמשך אינו נוגע לעניין, ולעולם לא בגלל אורך.</li>
+    <li><b>סיווג המקבילה והסבר הקשר.</b> כל מקבילה מסווגת לפי מידת הקרבה (מובהקת, נושאית, אפשרית ועוד), ולצדה הסבר קצר של הקשר בין המקורות.</li>
+    <li><b>תיארוך.</b> לספרות שלאחר המקרא (חז״ל, תרגומים, ספרות חיצונית, ברית חדשה, פרשנות) מצוין תיארוך משוער; למקרא, לקוראן ולחדית׳ לא ניתן תיארוך.</li>
+    <li><b>מראי מקום.</b> מקרא – ספר, פרק ופסוק; קוראן – סורה:פסוק; חדית׳ – אוסף ומספר לפי sunnah.com; תלמוד – מסכת, דף ועמוד.</li></ul>
     <h3>מקורות ומהדורות</h3>
     <ul><li>נוסח המקרא: מקרא על פי המסורה, ללא טעמים.</li><li>התרגום הערבי למקרא: ון־דייק (1865), נחלת הכלל.</li><li>נוסח הקוראן: הכתיב העות׳מאני.</li>
     <li>החדית׳: לפי מספור sunnah.com; במוסלם – מספור עבד אל־באקי.</li><li>תפסיר רס״ג: לפי הנוסח שבספריא.</li><li>התרגומים לעברית של הקוראן ושל החדית׳: תרגום המאגר.</li></ul>
     <h3>איך נבדק המאגר</h3>
     <ul><li>מראי המקום בקוראן נבדקו אוטומטית מול נוסח הקוראן.</li><li>כל ציטוט מן החדית׳ אותר מילה במילה בנוסח sunnah.com.</li><li>נוסח התפסיר (אבן כת׳יר, אלטברי, אבן עאשור) נשלף מקבצים פתוחים (spa5k/tafsir_api) ונבדק מול הדפוס המקובל.</li><li>מקורות חז״ל נבדקו מול ספריא. העבודה נעשתה בסיוע כלי בינה מלאכותית, ונבדקת בידי אדם.</li></ul>
+    <h3 id="cite">איך לצטט את המאגר</h3>
+    <p>תבנית מוצעת:</p><div class="cite">מדרשת האמונה: מאגר דו־לשוני של מקבילות בין מקורות היהדות והאסלאם, ${esc(home)} (נצפה ב־<i>תאריך</i>).</div>
+    <p class="small">לציטוט עמוד מסוים מוסיפים את שם העמוד בראש הציטוט ואת הקישור הקבוע שלו. בכל נושא, פרשה וסורה, הכפתור „ציטוט“ שבסרגל השיתוף מעתיק ציטוט מוכן בעברית ובערבית.</p>
+    <p><button type="button" class="btn" data-cite="" data-cite-ar="" data-cite-route="">${L('העתק ציטוט למאגר', 'انسخ الإحالة إلى القاعدة')}</button></p>
     <p class="small muted">גופנים: Amiri, Amiri Quran, Frank Ruhl Libre, Heebo – ברישיון SIL Open Font License.</p>
     <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה: <a href="${ISSUES}" target="_blank" rel="noopener">דיווח על טעות או הצעת תרגום</a> (דרך GitHub). גם בכל כרטיס מקבילה, תחת „פרטים“, יש קישור לדיווח.</p>
    </div>
@@ -265,14 +278,24 @@ async function viewAbout() {
     <li><b>القرآن وتفسير أهل الكتاب</b> – القرآن حسب ترتيبه، بالعربية وبترجمة عبرية، مع التوازيات من المقرا وأدب الحكماء.</li>
     <li><b>التوراة وتفسير الإسلام</b> – التوراة حسب البرشيوت، بنص المسوراه وترجمة فان دايك، مع التوازيات من القرآن والحديث وملاحظات من تفسير سعديا الفيومي.</li>
     <li><b>الأنبياء والكتب، والملاحق، والحديث</b>.</li></ul>
+    <h3>مبادئ العمل والترجمة</h3>
+    <ul><li><b>النص الأصلي والترجمة جنبًا إلى جنب.</b> يُعرض كل نص بلغته الأصلية وبترجمة: المقرا بنص المسوراه وبترجمة فان دايك العربية؛ والقرآن بالرسم العثماني وبترجمة عبرية جديدة أُعدّت للمشروع؛ والحديث بنصه العربي وبترجمة عبرية من إعداد القاعدة؛ ومصادر الحكماء بلغتها وبترجمة عربية.</li>
+    <li><b>الاقتباس الكامل.</b> تُورَد المصادر متصلةً حتى نهاية المعنى، دون حذف في وسطها. ولا يُختصر النص إلا حين لا يتعلق ما بعده بالموضوع، ولا يُختصر لطوله أبدًا.</li>
+    <li><b>تصنيف التوازي وبيان الصلة.</b> يُصنَّف كل توازٍ بحسب درجة القرب (صريح، موضوعي، محتمل وغير ذلك)، ويرافقه بيان موجز للصلة بين المصادر.</li>
+    <li><b>التأريخ.</b> يُذكر تأريخ تقريبي للأدب اللاحق للمقرا (أدب الحكماء، والترجمات، والأدب الخارجي، والعهد الجديد، والتفاسير)؛ أما المقرا والقرآن والحديث فلا تُؤرَّخ.</li>
+    <li><b>الإحالات.</b> المقرا: السفر والإصحاح والآية؛ القرآن: السورة:الآية؛ الحديث: الكتاب والرقم حسب sunnah.com؛ التلمود: المسكيت والورقة والصفحة.</li></ul>
     <h3>المصادر والطبعات</h3>
     <ul><li>نص المقرا: حسب المسوراه، دون علامات النغم.</li><li>الترجمة العربية للمقرا: فان دايك (1865)، ملك عام.</li><li>نص القرآن: الرسم العثماني.</li>
     <li>الحديث: حسب ترقيم sunnah.com؛ وفي صحيح مسلم حسب ترقيم محمد فؤاد عبد الباقي.</li><li>تفسير سعديا: حسب النص في «سفاريا».</li><li>الترجمات العبرية للقرآن والحديث: ترجمة القاعدة.</li></ul>
     <h3>كيف رُوجعت القاعدة</h3>
     <ul><li>رُوجعت الإحالات القرآنية آليًّا على نص المصحف.</li><li>كل نص حديث عُثر عليه حرفيًّا في نص sunnah.com.</li><li>نص التفسير (ابن كثير والطبري وابن عاشور) مأخوذ من ملفات مفتوحة (spa5k/tafsir_api) ومراجَع على الطبعة المتداولة.</li><li>رُوجعت مصادر الحكماء على «سفاريا». أُنجز العمل بمساعدة أدوات ذكاء اصطناعي، ويخضع لمراجعة بشرية.</li></ul>
+    <h3>كيف تستشهد بالقاعدة</h3>
+    <p>صيغة مقترحة:</p><div class="cite">مدرسة الإيمان: قاعدة بيانات ثنائية اللغة للتوازيات بين مصادر اليهودية والإسلام، ${esc(home)} (تاريخ الاطلاع: <i>التاريخ</i>).</div>
+    <p class="small">للإحالة إلى صفحة بعينها يُضاف اسم الصفحة في أول الإحالة ورابطها الثابت. وفي كل موضوع وبرشا وسورة، يَنسخ زر «إحالة» في شريط المشاركة إحالةً جاهزة بالعبرية والعربية.</p>
     <p class="small muted">الخطوط: Amiri وAmiri Quran وFrank Ruhl Libre وHeebo – برخصة SIL Open Font License.</p>
     <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب: <a href="${ISSUES}" target="_blank" rel="noopener">الإبلاغ عن خطأ أو اقتراح ترجمة</a> (عبر GitHub). وفي كل بطاقة توازٍ، تحت «تفاصيل»، رابط للإبلاغ أيضًا.</p>
    </div></div></div>`;
+  if (anchor === 'cite' || anchor === 'method') scrollToAnchor(anchor);
 }
 
 function torahSide(cur) {
@@ -422,6 +445,12 @@ const STARTERS = ['N09', 'S04', 'N02', 'N04', 'N29', 'S09'];
 /* pages that have a static share page (with their own title and description for WhatsApp / search engines) */
 const shareUrl = route => /^(c\/[A-Z]\d+|b\/\d+|a\/\d+|n\/\d+)$/.test(route)
   ? location.origin + location.pathname.replace(/index\.html$/, '') + route + '.html' : location.origin + location.pathname + '#/' + route;
+/* bibliographic citation for a page (about page, "how to cite") */
+function citation(title, titleAr, url) {
+  const t = new Date(), d = `${t.getDate()}.${t.getMonth() + 1}.${t.getFullYear()}`;
+  return `${title ? `„${title}“, ` : ''}מדרשת האמונה: מאגר דו־לשוני של מקבילות בין מקורות היהדות והאסלאם, ${url} (נצפה ב־${d}).\n`
+    + `${titleAr ? `«${titleAr}»، ` : ''}مدرسة الإيمان: قاعدة بيانات ثنائية اللغة للتوازيات بين مصادر اليهودية والإسلام، ${url} (تاريخ الاطلاع: ${d}).`;
+}
 function shareBar(title, titleAr, summary, summaryAr, route) {
   const base = shareUrl(route), sep = '?';
   const msg = {
@@ -431,7 +460,10 @@ function shareBar(title, titleAr, summary, summaryAr, route) {
   const wa = k => `https://wa.me/?text=${encodeURIComponent(msg[k])}`;
   return `<div class="sharebar"><span class="lbl">${L('שיתוף לקבוצת הלימוד', 'مشاركة مع مجموعة الدراسة')}:</span>
     <a href="${wa('he')}" target="_blank" rel="noopener">${L('וואטסאפ – בעברית', 'واتساب – بالعبرية')}</a><a href="${wa('ar')}" target="_blank" rel="noopener">${L('וואטסאפ – בערבית', 'واتساب – بالعربية')}</a><a href="${wa('both')}" target="_blank" rel="noopener">${L('דו־לשוני', 'ثنائي اللغة')}</a>
-    <button type="button" data-link="${esc(route)}">${L('העתק קישור', 'انسخ الرابط')}</button></div>`;
+    <button type="button" data-link="${esc(route)}">${L('העתק קישור', 'انسخ الرابط')}</button>
+    <button type="button" data-cite="${esc(title)}" data-cite-ar="${esc(titleAr)}" data-cite-route="${esc(route)}" title="העתק ציטוט ביבליוגרפי לעמוד זה · انسخ إحالة مرجعية لهذه الصفحة">${L('ציטוט', 'إحالة')}</button>
+    <button type="button" class="prt" data-print title="הדפסה או שמירה כ־PDF · طباعة أو حفظ بصيغة PDF">${L('הדפס דף לימוד', 'اطبع ورقة دراسة')}</button></div>
+    <div class="print-head">מדרשת האמונה · <span lang="ar">مدرسة الإيمان</span> — ${esc(base)}</div>`;
 }
 async function viewThemes(code, anchor) {
   markTab('c');
@@ -666,7 +698,7 @@ async function route() {
     else if (v === 'n') await viewNakh(+a || 1, b);
     else if (v === 'x') await viewAppendix(a, b);
     else if (v === 'h') await viewHadith(+a || 0, b);
-    else if (v === 'about') await viewAbout();
+    else if (v === 'about') await viewAbout(a);
     else if (v === 'search') await viewSearch(h.slice(7));
     else await viewHome();
     if (!b) focusMain();

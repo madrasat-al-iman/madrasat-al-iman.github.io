@@ -112,7 +112,8 @@ mark{background:var(--hl);color:inherit;padding:0 1px}
 .tn{color:var(--gold);cursor:help;font-size:.8em;margin-inline-start:4px}
 @media print{
   .top,.draft,.side,.foot,.card-h .acts,.acts,.pager,.tools,.play,.secnav,.sharebar,.filter,.gchips,.skip,.toast,#openAll,details.more>summary{display:none!important}
-  .layout{display:block} .page{border:0;padding:0;box-shadow:none} body,body.darkmode{background:#fff;color:#000;--ink:#000;--muted:#444;--navy:#000;--gold:#333;--card:#fff;--paper:#fff;--chip:#fff;--line:#bbb}
+  .layout{display:block} .page{border:0;padding:0;box-shadow:none} body,body.darkmode{background:#fff;color:#000;--ink:#000;--muted:#444;--navy:#1b2f4a;--gold:#8c6d2f;--card:#fff;--paper:#fff;--chip:#f7f2e7;--line:#d9c9a3;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  h1,h2,h3{color:var(--navy)} .chip{border-color:var(--gold)} .print-head{display:block!important}
   .card,.src,.apx,.vrow{break-inside:avoid} details{display:block} details>*{display:block}
   a{color:#000;text-decoration:none} h1,h2,h3{break-after:avoid}
 }
@@ -226,3 +227,15 @@ details.kind > .src{margin:8px}
 .dtt{display:grid;gap:2px}
 .dtr{display:grid;grid-template-columns:1.4fr 1.4fr 1fr 1fr;gap:10px;padding:5px 6px;border-bottom:1px solid var(--line);font-size:14px}
 @media(max-width:700px){.dtr{grid-template-columns:1fr 1fr}}
+
+/* initial HTML: loading skeleton + section links for crawlers (replaced by the app) */
+.skel{display:flex;flex-direction:column;gap:10px;align-items:center;margin:18px auto}
+.skel span{display:block;height:12px;border-radius:6px;background:var(--line);width:60%;animation:skel 1.2s ease-in-out infinite alternate}
+.skel span:nth-child(2){width:45%} .skel span:nth-child(3){width:52%}
+@keyframes skel{from{opacity:.45}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.skel span{animation:none}}
+.seed ul{list-style:none;padding:0;margin:14px auto;max-width:760px;line-height:1.9;font-size:.95em}
+.footlinks a{color:var(--muted)}
+.print-head{display:none;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:8px;padding-bottom:4px}
+.cite{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.92em}
+.sharebar button.prt{font-weight:600}

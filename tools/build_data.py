@@ -178,6 +178,15 @@ def share_pages(*_):
     h = re.sub(r'(<meta property="og:url" content=")[^"]*(")', rf'\g<1>{site}\g<2>', h)
     h = re.sub(r'(<meta property="og:image" content=")[^"]*?(assets/og-card\.png")', rf'\g<1>{site}\g<2>', h)
     h = re.sub(r'(<link rel="canonical" href=")[^"]*(")', rf'\g<1>{site}\g<2>', h)
+    ld = {"@context": "https://schema.org", "@graph": [
+        {"@type": "WebSite", "@id": site + "#website", "url": site, "name": "מדרשת האמונה · مدرسة الإيمان",
+         "alternateName": ["מדרשת האמונה", "مدرسة الإيمان", "Madrasat al-Iman"], "inLanguage": ["he", "ar"],
+         "description": "מאגר דו־לשוני של מקבילות בין התורה, הנביאים והכתובים, חז״ל, הקוראן והחדית׳ · قاعدة بيانات ثنائية اللغة للتوازيات بين التوراة والأنبياء والكتب والحكماء والقرآن والحديث",
+         "publisher": {"@id": site + "#org"}},
+        {"@type": "Organization", "@id": site + "#org", "name": "מדרשת האמונה · مدرسة الإيمان", "url": site,
+         "logo": site + "assets/icon-512.png"}]}
+    h = re.sub(r'(<script type="application/ld\+json" id="ld-site">).*?(</script>)',
+               lambda m: m.group(1) + json.dumps(ld, ensure_ascii=False) + m.group(2), h, flags=re.S)
     open(p, 'w', encoding='utf-8').write(h)
     print('static pages', n)
 
