@@ -173,36 +173,57 @@ function play(key, btn) {
   AUDIO.onended = () => { btn.textContent = '▶'; };
 }
 
-function parallelCard(p, route, showBible) {
+function parallelCard(p, route, showBible, o = {}) {
   const q = quranRefs(p.src);
   const jump = q.length ? `<a href="#/a/${q[0][0]}/${q[0][1]}">${L('לקוראן', 'إلى القرآن')}</a>` : '';
   const txt = [`${p.ref || ''} ⇄ ${p.src || ''}`, p.refAr && p.srcAr ? `${p.refAr} ⇄ ${p.srcAr}` : '', p.textHe, p.textAr, p.note, p.noteAr].filter(Boolean).join('\n');
-  return `<div class="card" id="p-${esc(p.id)}">
-    <div class="card-h"><div>
+  return foldCard(o, 'card', `${o.pre || 'p'}-${esc(p.id)}`, `<div>
       <span class="t col-he">${esc(p.ref || '')} <span class="muted">⇄</span> ${linkQuran(p.src || '')}</span>
       ${p.refAr || p.srcAr ? `<div class="t col-ar ar" lang="ar">${esc(p.refAr || '')} <span class="muted">⇄</span> ${esc(p.srcAr || '')}</div>` : ''}
-      <div class="chips">${p.type ? `<span class="chip">${tr(p.type, TYPE_AR)}</span>` : ''}${strengthChip(p.strength)}</div>${dtLine(p.dt)}</div>
-      ${cardActs(txt, route, jump)}</div>
+      <div class="chips">${p.type ? `<span class="chip">${tr(p.type, TYPE_AR)}</span>` : ''}${strengthChip(p.strength)}</div>${dtLine(p.dt)}${o.fold ? teaser(p.note, p.noteAr) : ''}</div>
+      ${cardActs(txt, route, jump)}`, `
     ${showBible && (p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe)}</div><div class="ar col-ar" lang="ar">${esc(p.bibleAr)}</div></div><hr style="border:0;border-top:1px dashed var(--line)">` : ''}
     ${(p.textHe || p.textAr) ? `<div class="two"><div class="he col-he">${p.textHe ? pre(p.textHe) : PENDING_HE}</div><div class="ar col-ar${p.type === 'קוראן' ? ' q-text' : ''}" lang="ar">${pre(p.textAr)}</div></div>` : ''}
     ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
     ${(p.hadithHe || p.hadithAr) ? `<div class="two note small"><div class="col-he pre"><b>חדית׳ מתורגמים:</b> ${esc(p.hadithHe || '')}</div><div class="col-ar ar pre" lang="ar"><b>أحاديث مترجمة:</b> ${esc(p.hadithAr || '')}</div></div>` : ''}
-    ${p.unit || p.themes || p.id ? `<details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.unit ? `<div>${L('יחידה', 'الوحدة')}: ${esc(p.unit)}</div>` : ''}${p.themes ? `<div>${L('נושאים', 'الموضوعات')}: ${esc(p.themes)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}<div>${reportLink(p.id, route)}</div></details>` : ''}
-  </div>`;
+    ${p.unit || p.themes || p.id ? `<details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.unit ? `<div>${L('יחידה', 'الوحدة')}: ${esc(p.unit)}</div>` : ''}${p.themes ? `<div>${L('נושאים', 'الموضوعات')}: ${esc(p.themes)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}<div>${reportLink(p.id, route)}</div></details>` : ''}${o.goto ? gotoLink(o.goto) : ''}`);
 }
 
-function fqCard(p, showBible) {
+function fqCard(p, showBible, o = {}) {
   const q = `${p.su}:${p.a}${p.b !== p.a ? '–' + p.b : ''}`;
-  return `<div class="card fq" id="q-${esc(p.id)}">
-    <div class="card-h"><div><span class="t col-he">${esc(p.ref || '')} <span class="muted">⇄</span> קוראן <a href="#/a/${p.su}/${p.a}"><bdi dir="ltr">${q}</bdi></a></span>
+  return foldCard(o, 'card fq', `${o.pre || 'q'}-${esc(p.id)}`, `<div><span class="t col-he">${esc(p.ref || '')} <span class="muted">⇄</span> קוראן <a href="#/a/${p.su}/${p.a}"><bdi dir="ltr">${q}</bdi></a></span>
       ${p.refAr ? `<div class="t col-ar ar" lang="ar">${esc(p.refAr)} <span class="muted">⇄</span> <a href="#/a/${p.su}/${p.a}">${arNum(p.su)}: ${arNum(p.a)}${p.b !== p.a ? '–' + arNum(p.b) : ''}</a></div>` : ''}
-      <div class="chips"><span class="chip">${L('מתוך „עם הספר לקוראן״', 'من «أهل الكتاب والقرآن»')}</span>${strengthChip(p.strength)}</div></div>
-      ${cardActs([`${p.ref} ⇄ ${q}`, p.refAr, p.qHe, p.qAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${p.su}/${p.a}`, `<a href="#/a/${p.su}/${p.a}">${L('לקוראן', 'إلى القرآن')}</a>`)}</div>
+      <div class="chips"><span class="chip">${L('מתוך „עם הספר לקוראן״', 'من «أهل الكتاب والقرآن»')}</span>${strengthChip(p.strength)}</div>${o.fold ? teaser(p.note, p.noteAr) : ''}</div>
+      ${cardActs([`${p.ref} ⇄ ${q}`, p.refAr, p.qHe, p.qAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${p.su}/${p.a}`, `<a href="#/a/${p.su}/${p.a}">${L('לקוראן', 'إلى القرآن')}</a>`)}`, `
     ${showBible && (p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe || '')}</div><div class="ar col-ar" lang="ar">${esc(p.bibleAr || '')}</div></div><hr style="border:0;border-top:1px dashed var(--line)">` : ''}
     ${(p.qHe || p.qAr) ? `<div class="two"><div class="he col-he">${esc(p.qHe || '')}</div><div class="ar col-ar q-text" lang="ar">${esc(p.qAr || '')}</div></div>` : ''}
-    ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
-  </div>`;
+    ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}${o.goto ? gotoLink(o.goto) : ''}`);
 }
+
+/* ---------- folding (collapsed cards and sections) ---------- */
+const FOLDED = { fold: true };
+function foldCard(o, cls, id, head, body) {
+  return o.fold ? `<details class="${cls} fold" id="${id}"><summary class="card-h">${head}</summary><div class="cb">${body}</div></details>`
+    : `<div class="${cls}" id="${id}"><div class="card-h">${head}</div>${body}</div>`;
+}
+const teaser = (he, ar) => he || ar ? `<div class="teaser">${HEF ? `${he ? `<div class="col-he">${esc(he)}</div>` : ''}${ar ? `<div class="col-ar ar" lang="ar">${esc(ar)}</div>` : ''}` : `${ar ? `<div class="col-ar ar" lang="ar">${esc(ar)}</div>` : ''}${he ? `<div class="col-he">${esc(he)}</div>` : ''}`}</div>` : '';
+const gotoLink = id => `<div class="goto"><a href="#${id}" data-goto="${id}">${L('במקומה בפרשה ←', 'في موضعه من البرشا ←')}</a></div>`;
+const FOLD_OPEN = () => SVGI('<path d="M7 9l5-5 5 5"/><path d="M7 15l5 5 5-5"/>'), FOLD_CLOSE = () => SVGI('<path d="M7 4l5 5 5-5"/><path d="M7 20l5-5 5 5"/>');
+const foldAllBtn = () => `<button type="button" class="ib" data-foldall ${tip('פתח הכל', 'افتح الكل')}>${FOLD_OPEN()}</button>`;
+/* open every <details> around an element so that anchors and in-page links land on visible text */
+function reveal(el) { for (let d = el && el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true; if (el && el.tagName === 'DETAILS') el.open = true; }
+document.addEventListener('click', e => {
+  if (e.target.closest('summary button')) e.preventDefault();   /* copy/link buttons in a card header must not fold it */
+  const g = e.target.closest('[data-goto]');
+  if (g) { e.preventDefault(); const el = document.getElementById(g.dataset.goto); if (el) { reveal(el); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2500); } return; }
+  const fa = e.target.closest('[data-foldall]');
+  if (fa) { const ds = $$('.page details:not(.more)'); const open = !ds.every(d => d.open); ds.forEach(d => d.open = open);
+    $$('[data-foldall]').forEach(b => { b.innerHTML = open ? FOLD_CLOSE() : FOLD_OPEN(); const t = open ? ['סגור הכל', 'أغلق الكل'] : ['פתח הכל', 'افتح الكل']; b.title = `${t[1]} · ${t[0]}`; b.setAttribute('aria-label', b.title); }); }
+}, true);
+/* printing / saving as PDF: everything open, then back to how it was */
+let PRINT_CLOSED = [];
+window.addEventListener('beforeprint', () => { PRINT_CLOSED = $$('details:not([open])'); PRINT_CLOSED.forEach(d => d.open = true); });
+window.addEventListener('afterprint', () => { PRINT_CLOSED.forEach(d => d.open = false); PRINT_CLOSED = []; });
 
 /* report an error / suggest a translation: opens a pre-filled GitHub issue */
 const ISSUES = 'https://github.com/madrasat-al-iman/madrasat-al-iman.github.io/issues/new';
@@ -340,8 +361,8 @@ function buildNav(page, defs, unitSel) {
   nav.innerHTML = `<span class="nt">${L('מפת העמוד', 'خريطة الصفحة')}:</span>${links.join('')}<select class="units" aria-label="קפיצה · انتقال"><option value="">${units.length > 1 ? `קפיצה ל${unitLabel[0]}… · انتقال إلى ${unitLabel[1]}…` : 'קפיצה ל… · انتقال إلى…'}</option>
     <optgroup label="חלקי העמוד · أقسام الصفحة">${secs.map(([id, he, ar]) => `<option value="${id}">${he} · ${ar}</option>`).join('')}</optgroup>
     ${units.length > 1 ? `<optgroup label="${unitLabel[0]} · ${unitLabel[1]}">${units.map(u => `<option value="${u.id}">${esc(u.dataset.unit)}${u.dataset.unitAr ? ' · ' + esc(u.dataset.unitAr) : ''}</option>`).join('')}</optgroup>` : ''}</select>`;
-  nav.onclick = e => { const a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); document.getElementById(a.dataset.go)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
-  nav.onchange = e => { if (e.target.matches('select.units') && e.target.value) { const el = document.getElementById(e.target.value); if (el?.tagName === 'DETAILS') el.open = true; el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); e.target.value = ''; }
+  nav.onclick = e => { const a = e.target.closest('[data-go]'); if (a) { e.preventDefault(); const el = document.getElementById(a.dataset.go); reveal(el); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } };
+  nav.onchange = e => { if (e.target.matches('select.units') && e.target.value) { const el = document.getElementById(e.target.value); reveal(el); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); e.target.value = ''; }
     if (e.target.dataset.layer) page.classList.toggle('hide-' + e.target.dataset.layer, !e.target.checked); };
 }
 async function viewTorah(i, anchor) {
@@ -363,20 +384,39 @@ async function viewTorah(i, anchor) {
     if (!vs.length) continue;
     const ps = d.parallels.filter(p => !used.has(p.id) && inR(p.c, p.v, u.from, u.to)); ps.forEach(p => used.add(p.id));
     const fq = (d.fromQuran || []).filter(p => !used.has('q' + p.id) && inR(p.c, p.v, u.from, u.to)); fq.forEach(p => used.add('q' + p.id));
-    body += `<section class="unit" data-unit="${esc(u.name)}" data-unit-ar="${esc(stripPar(u.nameAr || ''))}"><div class="unit-h"><h2>${L(esc(u.name), esc(u.nameAr || ''))}</h2>
-      <span class="muted small">${L(`${esc(P.book)} ${ref(vs[0].c, vs[0].v)} – ${ref(vs.at(-1).c, vs.at(-1).v)}`, `${esc(P.bookAr || '')} ${refAr(vs[0].c, vs[0].v)} – ${refAr(vs.at(-1).c, vs.at(-1).v)}`)}</span>${u.type ? `<span class="chip">${tr(u.type, TYPE_AR)}</span>` : ''}</div>
-      <div class="verses layer-text">${vs.map(v => `<div class="vrow" id="v-${v.c}-${v.v}">
+    const np = ps.length + fq.length;
+    body += `<details class="unit" data-unit="${esc(u.name)}" data-unit-ar="${esc(stripPar(u.nameAr || ''))}"><summary class="unit-h"><h2>${L(esc(u.name), esc(u.nameAr || ''))}</h2>
+      <span class="muted small">${L(`${esc(P.book)} ${ref(vs[0].c, vs[0].v)} – ${ref(vs.at(-1).c, vs.at(-1).v)}`, `${esc(P.bookAr || '')} ${refAr(vs[0].c, vs[0].v)} – ${refAr(vs.at(-1).c, vs.at(-1).v)}`)}</span>${u.type ? `<span class="chip">${tr(u.type, TYPE_AR)}</span>` : ''}<span class="cnt">${L(`${vs.length} פסוקים${np ? ` · ${np} מקבילות` : ''}`, `${arNum(vs.length)} آية${np ? ` · ${arNum(np)} توازيًا` : ''}`)}</span></summary>
+      <details class="vfold"><summary>${L(`קריאת הפסוקים (${vs.length})`, `قراءة الآيات (${arNum(vs.length)})`)}</summary><div class="verses layer-text">${vs.map(v => `<div class="vrow" id="v-${v.c}-${v.v}">
         <div class="he"><a class="num" href="#/b/${i}/${v.c}:${v.v}">${ref(v.c, v.v)}</a>${esc(v.he)}</div>
         <div class="ar" lang="ar">${esc(v.ar)} <span class="num">(${arNum(v.vd ? v.vd.replace(':', ': ') : v.v)})</span></div>
-        ${(sa[key(v.c, v.v)] || []).map(s => `<div class="saadia layer-note"><b>${L(`תפסיר רס״ג על „${esc(s.phrase)}״`, 'تفسير سعديا الفيومي')}</b> <span class="muted small">(${dtShort('saadia')})</span>
+        ${(sa[key(v.c, v.v)] || []).map(s => `<details class="saadia layer-note"><summary><b>${L(`תפסיר רס״ג על „${esc(s.phrase)}״`, 'تفسير سعديا الفيومي')}</b> <span class="muted small">(${dtShort('saadia')})</span></summary>
           <div class="two small"><div>${L('ון־דייק', 'فان دايك')}: <span lang="ar" class="ar">${esc(s.vd)}</span></div><div>${L('רס״ג', 'سعديا')}: <span lang="ar" class="ar">${esc(s.sa)}</span> <span class="muted col-he">(${esc(s.tr)})</span></div></div>
-          <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></div>`).join('')}
-      </div>`).join('')}</div>
-      ${ps.length || fq.length ? `<div class="layer-par"><h3 class="par-h">${L('פירוש האסלאם', 'تفسير الإسلام')} <span class="muted small">(${ps.length + fq.length})</span></h3>${ps.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`)).join('')}${fq.map(p => fqCard(p)).join('')}</div>` : ''}
-    </section>`;
+          <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></details>`).join('')}
+      </div>`).join('')}</div></details>
+      ${np ? `<div class="layer-par"><h3 class="par-h">${L('פירוש האסלאם', 'تفسير الإسلام')} <span class="muted small">(${np})</span></h3>${ps.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('')}${fq.map(p => fqCard(p, true, FOLDED)).join('')}</div>` : ''}
+    </details>`;
   }
   const rest = d.parallels.filter(p => !used.has(p.id)), restQ = (d.fromQuran || []).filter(p => !used.has('q' + p.id));
-  if (rest.length || restQ.length) body += `<section class="unit"><h2>${L('מקבילות נוספות', 'توازيات أخرى')}</h2>${`<div class="layer-par">${rest.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`)).join('')}${restQ.map(p => fqCard(p, true)).join('')}</div>`}</section>`;
+  if (rest.length || restQ.length) body += `<details class="unit"><summary class="unit-h"><h2>${L('מקבילות נוספות', 'توازيات أخرى')}</h2><span class="cnt">${L(`${rest.length + restQ.length} מקבילות`, `${arNum(rest.length + restQ.length)} توازيًا`)}</span></summary><div class="layer-par">${rest.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('')}${restQ.map(p => fqCard(p, true, FOLDED)).join('')}</div></details>`;
+  /* key parallels: the clear-cut ones first, spread over the units of the parasha */
+  const unitOf = p => units.findIndex(u => inR(p.c, p.v, u.from, u.to));
+  const rank = s => s === 'מובהקת' ? 0 : /^נושאי/.test(s || '') ? 1 : 2;
+  const cand = [...d.parallels.map(p => ['p', p]), ...(d.fromQuran || []).map(p => ['q', p])];
+  const keyP = [];
+  if (cand.length >= 4) for (const r of [0, 1]) {
+    let pool = cand.filter(x => rank(x[1].strength) === r), seen = new Set(keyP.map(x => unitOf(x[1])));
+    while (keyP.length < 5 && pool.length) {
+      const pick = pool.find(x => !seen.has(unitOf(x[1]))) || pool[0];
+      keyP.push(pick); seen.add(unitOf(pick[1])); pool = pool.filter(x => x !== pick);
+      if (units.every((u, k) => seen.has(k))) seen = new Set();
+    }
+    if (keyP.length >= 3) break;
+  }
+  keyP.sort((x, y) => key(x[1].c, x[1].v) - key(y[1].c, y[1].v));
+  const keyHtml = keyP.length ? `<section class="keypar"><h2>${L('מקבילות מרכזיות', 'أبرز التوازيات')}</h2>
+    <p class="muted small">${L('לחצו על מקבילה כדי לקרוא אותה במלואה. כל המקבילות – לפי יחידות הפרשה, למטה.', 'اضغطوا على أي توازٍ لقراءته كاملًا. جميع التوازيات – حسب وحدات البرشا – في الأسفل.')}</p>
+    ${keyP.map(([k, p]) => k === 'p' ? parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, { fold: true, pre: 'k', goto: `p-${p.id}` }) : fqCard(p, true, { fold: true, pre: 'kq', goto: `q-${p.id}` })).join('')}</section>` : '';
   const prev = META.parashot.find(p => p.i === i - 1), next = META.parashot.find(p => p.i === i + 1);
   $('.page', app).innerHTML = `<div class="crumbs">${L('התורה ופירוש האסלאם', 'التوراة وتفسير الإسلام')} · ${L(esc(P.book), esc(P.bookAr || ''))}</div>
     <h1>${L(`פרשת ${esc(P.name)}`, `برشا ${esc(P.nameAr || '')}`)}</h1>
@@ -384,10 +424,12 @@ async function viewTorah(i, anchor) {
       `${esc(P.bookAr || '')} ${refAr(P.from[0], P.from[1])} – ${refAr(P.to[0], P.to[1])} · ${arNum(P.verses)} آية · ${arNum(d.parallels.length + (d.fromQuran || []).length)} توازيًا`)}</div>
     ${shareBar(`פרשת ${P.name}`, `برشا ${stripPar(P.nameAr || '')}`, `${P.book} ${ref(P.from[0], P.from[1])} – ${ref(P.to[0], P.to[1])}: התורה עם המקבילות מן הקוראן ומן החדית׳`, `${P.bookAr || ''} – التوراة مع توازياتها من القرآن والحديث`, `b/${i}`)}
     ${NAV}
+    ${keyHtml}
+    <div class="units-h"><h2>${L('הפרשה לפי יחידות', 'البرشا حسب الوحدات')}</h2>${foldAllBtn()}</div>
     ${body}
     ${P.questions || P.questionsAr ? `<div class="qs" id="sec-qs"><h3>${L('לשולחן שבת: שאלות לשיחה וללימוד משותף', 'لمائدة السبت: أسئلة للحوار والدراسة المشتركة')}</h3><div class="two"><div class="pre col-he">${esc(P.questions || '')}</div><div class="pre col-ar ar" lang="ar">${P.questionsAr ? esc(P.questionsAr) : PENDING}</div></div></div>` : ''}
     <div class="pager">${prev ? `<a class="btn" href="#/b/${prev.i}">→ ${L(esc(prev.name), esc(stripPar(prev.nameAr)))}</a>` : '<span></span>'}${next ? `<a class="btn" href="#/b/${next.i}">${L(esc(next.name), esc(stripPar(next.nameAr)))} ←</a>` : ''}</div>`;
-  buildNav($('.page', app), [['.verses', 'הטקסט המקורי: תורה', 'النص الأصلي: التوراة', 'text'], ['.par-h', 'פירוש האסלאם', 'تفسير الإسلام', 'par'], ['.saadia', 'הערות: תפסיר רס״ג', 'ملاحظات: تفسير سعديا', 'note'], ['#sec-qs', 'שאלות ללימוד משותף', 'أسئلة للدراسة المشتركة']], '.unit[data-unit]');
+  buildNav($('.page', app), [['.keypar', 'מקבילות מרכזיות', 'أبرز التوازيات'], ['.verses', 'הטקסט המקורי: תורה', 'النص الأصلي: التوراة', 'text'], ['.par-h', 'פירוש האסלאם', 'تفسير الإسلام', 'par'], ['.saadia', 'הערות: תפסיר רס״ג', 'ملاحظات: تفسير سعديا', 'note'], ['#sec-qs', 'שאלות ללימוד משותף', 'أسئلة للدراسة المشتركة']], '.unit[data-unit]');
   $('.side a.on')?.scrollIntoView({ block: 'nearest' });
   scrollToAnchor(anchor && `v-${anchor.replace(':', '-')}`);
 }
@@ -730,7 +772,7 @@ function snip(t, f, words, n = 140) {
 function scrollToAnchor(id) {
   if (!id) { window.scrollTo(0, 0); return; }
   const el = document.getElementById(id);
-  if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2500); }
+  if (el) { reveal(el); el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2500); }
 }
 
 /* ---------- router ---------- */

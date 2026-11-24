@@ -275,3 +275,37 @@ body:not(.he-first) .apx .ah .ttl.ar{order:-1}
 .logo-img{width:40px;height:40px;flex:none}
 @media(max-width:700px){.logo-img{width:32px;height:32px}}
 .social-row{margin:6px 0}.social{display:inline-flex;gap:14px}.social a{display:inline-flex;opacity:.85}.social a:hover{opacity:1}.darkmode .social img[src$="x.svg"]{filter:invert(1)}
+/* ---------- folded pages (24.11.2026): key parallels first, the rest opens on click ---------- */
+.keypar{background:var(--chip);border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:14px 0 6px}
+.keypar > h2{margin:2px 0 2px;color:var(--navy)}
+.keypar > p{margin:0 0 6px}
+.keypar .card{background:var(--paper)}
+.units-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
+.units-h h2{margin:0}
+details > summary{cursor:pointer}
+details.fold > summary,details.unit > summary{list-style:none}
+details.fold > summary::-webkit-details-marker,details.unit > summary::-webkit-details-marker{display:none}
+details.fold > summary::before,details.unit > summary::before{content:"";flex:0 0 auto;width:8px;height:8px;border:solid var(--gold);border-width:0 0 2px 2px;transform:rotate(45deg);margin-inline-end:4px;transition:transform .15s;align-self:center}
+details.fold[open] > summary::before,details.unit[open] > summary::before{transform:rotate(-45deg)}
+summary.card-h > div:not(.acts){flex:1 1 0;min-width:0}
+details.fold:not([open]) > summary.card-h{border-bottom:0;margin-bottom:0;padding-bottom:0}
+details.fold:not([open]){padding-top:9px;padding-bottom:9px}
+details.fold > summary:hover .t{color:var(--navy)}
+.card-h .teaser{font-size:.86em;color:var(--muted);font-weight:normal;margin-top:4px}
+.card-h .teaser > div{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body:not(.lang-he):not(.lang-ar) .card-h .teaser > div{-webkit-line-clamp:1}
+details.fold[open] .teaser{display:none}
+.goto{margin-top:6px;font-size:.88em}
+details.unit{margin-top:12px;border-top:2px solid var(--line);padding-top:8px}
+details.unit > summary.unit-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;padding:4px 0}
+details.unit > summary .cnt{font-size:.85em;color:var(--muted);margin-inline-start:auto}
+details.unit:not([open]) > summary h2{font-size:1.2em}
+details.vfold{border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--bg)}
+details.vfold > summary{padding:7px 12px;font-family:var(--he);font-weight:700;color:var(--navy)}
+details.vfold[open] > summary{border-bottom:1px solid var(--line)}
+details.vfold > .verses{padding:4px 10px}
+details.saadia > summary{list-style-position:inside}
+details.saadia[open] > summary{margin-bottom:4px}
+@media print{details > summary::before{display:none} .teaser,.goto,[data-foldall]{display:none!important} .keypar{display:none}}
+.card.flash{outline:2px solid var(--gold);outline-offset:2px}
+details.fold:not([open]) .dt{display:none}
