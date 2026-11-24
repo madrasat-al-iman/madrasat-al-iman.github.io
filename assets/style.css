@@ -309,3 +309,10 @@ details.saadia[open] > summary{margin-bottom:4px}
 @media print{details > summary::before{display:none} .teaser,.goto,[data-foldall]{display:none!important} .keypar{display:none}}
 .card.flash{outline:2px solid var(--gold);outline-offset:2px}
 details.fold:not([open]) .dt{display:none}
+details.unit > summary .opening{flex:1 1 100%;min-width:0;contain:inline-size;overflow:hidden;font-size:.9em;color:var(--muted);order:5}
+details.unit > summary .opening > span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.unit[open] > summary .opening{display:none}
+details.unit > summary .opening .q-text,details.unit > summary .opening .ar{font-size:1.05em}
+details.vfold.whole{margin:14px 0 4px;background:var(--chip)}
+details.vfold.whole > summary{font-size:1.05em}
+details.unit > summary .opening,details.unit > summary .opening > span{background:none!important;border:0!important;padding:0!important;margin:0!important;box-shadow:none!important;font-weight:normal}
