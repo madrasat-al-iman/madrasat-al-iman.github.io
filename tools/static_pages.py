@@ -62,8 +62,15 @@ def ar_first(html):
     return html
 
 
+def fold(body):
+    """Parallels and sources open on click (the heading stays visible; the full text is in the page for search engines)."""
+    body = re.sub(r'<section class="(card|src)"><h3>(.*?)</h3>', r'<details class="\1 fold"><summary class="card-h"><div><h3>\2</h3></div></summary><div class="cb">', body)
+    return body.replace('</section>', '</div></details>')
+
+
 def page(site, route, title, title_ar, desc, body, crumbs, seo=None):
     hef = route.startswith(('b/', 'n/'))
+    body = fold(body)
     html = _page(site, route, title, title_ar, desc, body, crumbs, seo, hef)
     return html if hef else ar_first(html)
 
