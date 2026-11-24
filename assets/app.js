@@ -14,7 +14,7 @@ const pre = s => esc(s).replace(/\n/g, '<br>');
 let HEF = false;
 const L = (he, ar) => HEF ? `<span class="l-he">${he}</span><span class="l-ar" lang="ar">${ar}</span>` : `<span class="l-ar" lang="ar">${ar}</span><span class="l-he">${he}</span>`;
 const NEWS_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSe1PneLa7cO6eKE2X4e95ls7tM-3C8emGgp_rlZvDlTSaRG2w/viewform';
-const newsBox = () => `<div class="newsbox" id="newsletter"><h2>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h2>
+const newsBox = (head = true) => `<div class="newsbox" id="newsletter">${head ? `<h2>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h2>` : ''}
   <div class="two"><p class="col-he">פעם בשבוע, בחמישי או בשישי, בעברית ובערבית: פרשת השבוע בעיני האסלאם, קטע מן הקוראן עם „תפסיר עם הספר“, נושא לעיון מן המאגר ופנייה אמונית קצרה בעניין אקטואלי – עם קישורים לאתר. אפשר להסיר את ההרשמה בכל עת.</p>
   <p class="col-ar ar" lang="ar">مرة في الأسبوع، يوم الخميس أو الجمعة، بالعربية والعبرية: قراءة التوراة الأسبوعية في ضوء الإسلام، ونص من القرآن مع «تفسير أهل الكتاب»، وموضوع للتأمل من القاعدة، وكلمة إيمانية قصيرة في شأن من شؤون الساعة – مع روابط إلى الموقع. يمكن إلغاء الاشتراك في أي وقت.</p></div>
   <p><a class="btn primary" href="${NEWS_FORM}" target="_blank" rel="noopener">${L('להרשמה לגיליון', 'للاشتراك في النشرة')}</a> <a class="btn" href="#/news">${L('ארכיון הגיליונות', 'أرشيف النشرات')}</a></p></div>`;
@@ -252,7 +252,7 @@ async function viewHome() {
 async function viewNews() {
   markTab('news'); setTitle('הגיליון השבועי · النشرة الأسبوعية');
   const list = await fetch('newsletter/index.json').then(r => r.ok ? r.json() : []).catch(() => []);
-  app.innerHTML = `<div class="page"><h1>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h1>${newsBox()}
+  app.innerHTML = `<div class="page"><h1>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h1>${newsBox(false)}
     <h2>${L('ארכיון הגיליונות', 'أرشيف النشرات')}</h2>
     ${list.length ? `<ul class="newslist">${list.map(n => `<li><a href="${esc(n.url)}">${L(esc(n.title || ''), esc(n.titleAr || ''))}</a> <span class="muted small">${esc(n.date || '')}</span></li>`).join('')}</ul>` : `<p class="muted">${L('הגיליון הראשון יתפרסם כאן בקרוב.', 'سيُنشر العدد الأول هنا قريبًا.')}</p>`}</div>`;
 }
