@@ -51,7 +51,24 @@ def dating(keys, D):
     return f'<div class="dt"><span class="l-he"><b>תיארוך משוער:</b> {he}</span><span class="l-ar" lang="ar"><b>التأريخ التقريبي:</b> {ar}</span></div>'
 
 
+def ar_first(html):
+    """Public order: Arabic before Hebrew in bilingual labels and headings."""
+    html = re.sub(r'<span class="l-he">((?:(?!</span>).)*)</span>(\s?)<span class="l-ar" lang="ar">((?:(?!</span>).)*)</span>',
+                  r'<span class="l-ar" lang="ar">\3</span>\2<span class="l-he">\1</span>', html)
+    html = re.sub(r'>([^<>]+?) · <span lang="ar">([^<]+)</span>', r'><span lang="ar">\2</span> · \1', html)
+    html = html.replace('מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span>',
+                        '<span lang="ar">مدرسة الإيمان</span> <span class="sep">·</span> מדרשת האמונה')
+    html = html.replace('מדרשת האמונה · مدرسة الإيمان', 'مدرسة الإيمان · מדרשת האמונה')
+    return html
+
+
 def page(site, route, title, title_ar, desc, body, crumbs, seo=None):
+    hef = route.startswith(('b/', 'n/'))
+    html = _page(site, route, title, title_ar, desc, body, crumbs, seo, hef)
+    return html if hef else ar_first(html)
+
+
+def _page(site, route, title, title_ar, desc, body, crumbs, seo, hef):
     """seo: (Hebrew, Arabic) search-phrase title for <title>/og:title; the page heading stays title/title_ar."""
     st, st_ar = seo or (title, title_ar)
     url = f'{site}{route}.html'
@@ -66,17 +83,17 @@ def page(site, route, title, title_ar, desc, body, crumbs, seo=None):
     up = '../' * depth
     return f"""<!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{E(st)} · {E(st_ar)} | מדרשת האמונה · مدرسة الإيمان</title>
+<title>{(E(st) + " · " + E(st_ar)) if hef else (E(st_ar) + " · " + E(st))} | מדרשת האמונה · مدرسة الإيمان</title>
 <meta name="description" content="{E(desc)}">
 <link rel="canonical" href="{url}">
 <meta property="og:type" content="article"><meta property="og:site_name" content="מדרשת האמונה · مدرسة الإيمان">
-<meta property="og:title" content="{E(st)} · {E(st_ar)}"><meta property="og:description" content="{E(desc)}">
+<meta property="og:title" content="{(E(st) + " · " + E(st_ar)) if hef else (E(st_ar) + " · " + E(st))}"><meta property="og:description" content="{E(desc)}">
 <meta property="og:url" content="{url}"><meta property="og:image" content="{site}assets/og-card.png">
 <meta property="og:locale" content="he_IL"><meta property="og:locale:alternate" content="ar_AR"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="{up}favicon.ico" sizes="16x16 32x32 48x48"><link rel="icon" type="image/png" sizes="192x192" href="{up}assets/icon-192.png"><link rel="apple-touch-icon" href="{up}assets/apple-touch-icon.png">
 <link rel="stylesheet" href="{up}assets/fonts.css"><link rel="stylesheet" href="{up}assets/style.css">
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
-</head><body class="static">
+</head><body class="static{" he-first" if hef else ""}">
 <header class="top"><div class="brand"><a href="{up}index.html" class="logo">מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span></a></div>
 <nav class="tabs"><a href="{up}index.html#/c"><span class="l-he">נושאים לעיון</span><span class="l-ar" lang="ar">موضوعات للتأمل</span></a><a href="{up}index.html#/a"><span class="l-he">הקוראן ותפסיר עם הספר</span><span class="l-ar" lang="ar">القرآن وتفسير أهل الكتاب</span></a><a href="{up}index.html#/b"><span class="l-he">התורה ופירוש האסלאם</span><span class="l-ar" lang="ar">التوراة وتفسير الإسلام</span></a></nav></header>
 <main class="page">

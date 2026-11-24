@@ -239,3 +239,19 @@ details.kind > .src{margin:8px}
 .print-head{display:none;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:8px;padding-bottom:4px}
 .cite{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.92em}
 .sharebar button.prt{font-weight:600}
+/* Arabic first (public order); the Torah / Nakh sections keep Hebrew first via body.he-first */
+body:not(.lang-he):not(.lang-ar) .l-ar + .l-he::before{content:" · ";color:var(--gold);font-family:var(--ui)}
+.tl-row .sm.l-he::before,.dt .l-he::before,.side .sub + .l-he::before{content:none!important}
+body:not(.he-first) .two > .col-ar,body:not(.he-first) .two > .ar,body:not(.he-first) .vrow > .ar{order:-1}
+body:not(.he-first) .vrow > .ar{border-right:0;padding-right:0}
+body:not(.he-first) .vrow > .he{border-right:1px solid var(--line);padding-right:14px}
+body:not(.he-first).lang-he .vrow > .he{border:0;padding:0}
+@media(max-width:700px){body:not(.he-first) .vrow > .he{border:0;padding-right:0}}
+.dt{display:flex;flex-direction:column}
+body:not(.he-first) .dt .l-ar{order:-1}
+body:not(.he-first) .card-h > div:has(> .t.col-ar){display:flex;flex-direction:column}
+body:not(.he-first) .card-h .t.col-ar{order:-1}
+body:not(.he-first) .src .h .refs .col-ar{order:-1;font-weight:inherit;color:inherit}
+body:not(.he-first) .src .h .refs .col-he{font-weight:400;color:var(--muted)}
+body:not(.he-first) .apx .ah .chip{order:-2}
+body:not(.he-first) .apx .ah .ttl.ar{order:-1}

@@ -10,7 +10,10 @@ let META = null;
 const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const pre = s => esc(s).replace(/\n/g, '<br>');
 /** bilingual label */
-const L = (he, ar) => `<span class="l-he">${he}</span><span class="l-ar" lang="ar">${ar}</span>`;
+// Arabic first everywhere, except the Torah / Nakh sections (DB B), where Hebrew leads
+let HEF = false;
+const L = (he, ar) => HEF ? `<span class="l-he">${he}</span><span class="l-ar" lang="ar">${ar}</span>` : `<span class="l-ar" lang="ar">${ar}</span><span class="l-he">${he}</span>`;
+const flipT = t => HEF ? t : t.split(' · ').reverse().join(' · ');
 const PENDING = `<span class="pending" lang="ar">الترجمة العربية قيد الإعداد</span>`;
 const PENDING_HE = `<span class="pending">התרגום לעברית – בהכנה</span>`;
 async function J(path) {
@@ -90,7 +93,7 @@ function refAr(he) {
 /* cut at a word boundary */
 function clip(t, n) { t = t || ''; if (t.length <= n) return t; const c = t.slice(0, n); const i = c.lastIndexOf(' '); return (i > n * .6 ? c.slice(0, i) : c).replace(/[\s,.;:–-]+$/, '') + '…'; }
 const stripPar = s => (s || '').replace(/\s*\(.*\)/, '');
-function setTitle(t) { document.title = (t ? t + ' · ' : '') + 'מדרשת האמונה · مدرسة الإيمان'; const a = $('#announce'); if (a) a.textContent = t || 'מדרשת האמונה · مدرسة الإيمان'; }
+function setTitle(t) { const site = flipT('מדרשת האמונה · مدرسة الإيمان'); t = t ? flipT(t) : ''; document.title = (t ? t + ' · ' : '') + site; const a = $('#announce'); if (a) a.textContent = t || site; }
 function focusMain() { const h = $('#app h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
 function markTab(t) {
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
@@ -224,7 +227,7 @@ async function viewHome() {
     star ? `<a class="bigcard gate" href="#/c/${star.code}"><div class="muted small">${L('נושא מומלץ לחברותא', 'موضوع مقترح للدراسة المشتركة')}</div><h3>${L(esc(star.title), esc(star.titleAr || ''))}</h3><div class="muted">${L(`${star.nsources} מקורות במלואם, עם שאלות לשיחה`, `${arNum(star.nsources)} مصدرًا كاملًا، مع أسئلة للحوار`)}</div></a>` : '',
     `<a class="bigcard gate" href="#/x/pearls"><div class="muted small">${L('קצר ומפתיע', 'قصير ومدهش')}</div><h3>${L('פנינים מקבילות', 'لآلئ متوازية')}</h3><div class="muted">${L('מאמר חז״ל וחדית׳ שאומרים כמעט אותו דבר', 'قول من أدب الحكماء وحديث يقولان الشيء نفسه تقريبًا')}</div></a>`].filter(Boolean);
   app.innerHTML = `<div class="page">
-    <h1>מדרשת האמונה <span class="ar" lang="ar" style="color:var(--gold)">مدرسة الإيمان</span></h1>
+    <h1><span class="ar" lang="ar" style="color:var(--gold)">مدرسة الإيمان</span> מדרשת האמונה</h1>
     <div class="two"><p class="col-he">מאגר דו־לשוני, עברית וערבית, של מקבילות בין התורה, הנביאים והכתובים וספרות חז״ל לבין הקוראן והחדית׳. כל מקבילה מובאת בנוסח המקור ובתרגום, עם הסבר הקשר ותיעוד המקורות.</p>
     <p class="col-ar ar" lang="ar">قاعدة بيانات ثنائية اللغة، بالعبرية والعربية، للتوازيات بين التوراة والأنبياء والكتب وأدب الحكماء وبين القرآن والحديث. يُعرض كل توازٍ بنصه الأصلي وترجمته، مع بيان الصلة وتوثيق المصادر.</p></div>
     <h2>${L('מאיפה מתחילים?', 'من أين نبدأ؟')}</h2><div class="grid-cards gates">${gates.join('')}</div>
@@ -521,7 +524,7 @@ async function viewThemes(code, anchor) {
     <div class="filter"><input id="tf" type="search" placeholder="סינון לפי מילה · تصفية بكلمة" aria-label="סינון · تصفية"><span class="muted small" id="tc"></span></div>
     <div id="tl">${d.topics.map(t => `<a class="tl-row" href="#/c/${t.code}" data-g="${esc(t.group || '')}" data-f="${esc(norm([t.code, t.title, t.titleAr, t.summary, t.summaryAr].join(' ')))}">
       <span class="tt">${L(esc(t.title), esc(t.titleAr || ''))}</span><span class="meta"><span>${tr(t.group, GROUP_AR) || ''}</span><span>${L(`${t.nsources} מקורות`, `${arNum(t.nsources)} مصدرًا`)}</span><span>${esc(t.code)}</span></span>
-      <span class="sm l-he">${esc(clip(t.summary, 170))}</span><span class="sm ar l-ar" lang="ar">${esc(clip(t.summaryAr, 170))}</span></a>`).join('')}</div></div>`;
+      <span class="sm ar l-ar" lang="ar">${esc(clip(t.summaryAr, 170))}</span><span class="sm l-he">${esc(clip(t.summary, 170))}</span></a>`).join('')}</div></div>`;
   let G = '';
   const f = () => { const q = norm($('#tf').value); let n = 0; $$('#tl a').forEach(a => { const ok = a.dataset.f.includes(q) && (!G || a.dataset.g === G); a.style.display = ok ? '' : 'none'; n += ok; }); $('#tc').innerHTML = L(`${n} נושאים`, `${arNum(n)} موضوعًا`); };
   $('.gchips').onclick = e => { const b = e.target.closest('button'); if (!b) return; G = b.dataset.g; $$('.gchips button').forEach(x => x.classList.toggle('on', x === b)); f(); };
@@ -647,7 +650,7 @@ async function viewSearch(q) {
     const shown = kinds.filter(k => !only || only === k);
     $('#sres').innerHTML = `${shown.map(k => `<h2>${L(...KIND[k])} <span class="muted small">(${byKind[k].length})</span></h2><div class="results">${byKind[k].slice(0, 150).map(r =>
       `<a class="r" href="#/${r[2]}"><span class="k">${L(...KIND[r[0]])}</span>${esc(r[1])}<span class="s">${snip(r[3], r[4], words)}</span></a>`).join('')}</div>`).join('')}
-      ${(!only || only === 'q') && qv && qv.length ? `<h2>${L('פסוקי קוראן', 'آيات قرآنية')} <span class="muted small">(${qv.length})</span></h2><div class="results">${qv.slice(0, 150).map(r => `<a class="r" href="#/a/${r[0]}/${r[1]}"><span class="k"><bdi dir="ltr">${r[0]}:${r[1]}</bdi></span><span class="s"><span class="l-he">${snip(r[3], fold(r[3]), words, 200)}</span><span class="l-ar" lang="ar">${snip(r[2], fold(r[2]), words, 200)}</span></span></a>`).join('')}</div>` : ''}
+      ${(!only || only === 'q') && qv && qv.length ? `<h2>${L('פסוקי קוראן', 'آيات قرآنية')} <span class="muted small">(${qv.length})</span></h2><div class="results">${qv.slice(0, 150).map(r => `<a class="r" href="#/a/${r[0]}/${r[1]}"><span class="k"><bdi dir="ltr">${r[0]}:${r[1]}</bdi></span><span class="s"><span class="l-ar" lang="ar">${snip(r[2], fold(r[2]), words, 200)}</span><span class="l-he">${snip(r[3], fold(r[3]), words, 200)}</span></span></a>`).join('')}</div>` : ''}
       ${qv === null ? `<p class="muted">${L('מחפש גם בפסוקי הקוראן…', 'جارٍ البحث في آيات القرآن أيضًا…')}</p>` : ''}
       ${qv && !res.length && !qv.length ? `<p>${L('לא נמצאו תוצאות. נסו מילה אחרת, בלי ניקוד.', 'لم يُعثر على نتائج. جرّبوا كلمة أخرى دون تشكيل.')}</p>` : ''}`;
   };
@@ -692,6 +695,7 @@ async function route() {
   const lm = h.match(/\?l=(he|ar|both)$/);
   if (lm) { h = h.slice(0, lm.index); LANG = lm[1]; store.set('lang', LANG); applySettings(); }
   const [v, a, b] = h.split('/');
+  HEF = v === 'b' || v === 'n'; document.body.classList.toggle('he-first', HEF);
   try {
     if (!v) await viewHome();
     else if (v === 'c') await viewThemes(a, b);
