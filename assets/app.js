@@ -390,9 +390,9 @@ async function viewTorah(i, anchor) {
       <details class="vfold"><summary>${L(`קריאת הפסוקים (${vs.length})`, `قراءة الآيات (${arNum(vs.length)})`)}</summary><div class="verses layer-text">${vs.map(v => `<div class="vrow" id="v-${v.c}-${v.v}">
         <div class="he"><a class="num" href="#/b/${i}/${v.c}:${v.v}">${ref(v.c, v.v)}</a>${esc(v.he)}</div>
         <div class="ar" lang="ar">${esc(v.ar)} <span class="num">(${arNum(v.vd ? v.vd.replace(':', ': ') : v.v)})</span></div>
-        ${(sa[key(v.c, v.v)] || []).map(s => `<details class="saadia layer-note"><summary><b>${L(`תפסיר רס״ג על „${esc(s.phrase)}״`, 'تفسير سعديا الفيومي')}</b> <span class="muted small">(${dtShort('saadia')})</span></summary>
+        ${(sa[key(v.c, v.v)] || []).map(s => `<div class="saadia layer-note"><b>${L(`תפסיר רס״ג על „${esc(s.phrase)}״`, 'تفسير سعديا الفيومي')}</b> <span class="muted small">(${dtShort('saadia')})</span>
           <div class="two small"><div>${L('ון־דייק', 'فان دايك')}: <span lang="ar" class="ar">${esc(s.vd)}</span></div><div>${L('רס״ג', 'سعديا')}: <span lang="ar" class="ar">${esc(s.sa)}</span> <span class="muted col-he">(${esc(s.tr)})</span></div></div>
-          <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></details>`).join('')}
+          <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></div>`).join('')}
       </div>`).join('')}</div></details>
       ${np ? `<div class="layer-par"><h3 class="par-h">${L('פירוש האסלאם', 'تفسير الإسلام')} <span class="muted small">(${np})</span></h3>${ps.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('')}${fq.map(p => fqCard(p, true, FOLDED)).join('')}</div>` : ''}
     </details>`;
@@ -404,7 +404,7 @@ async function viewTorah(i, anchor) {
   const rank = s => s === 'מובהקת' ? 0 : /^נושאי/.test(s || '') ? 1 : 2;
   const cand = [...d.parallels.map(p => ['p', p]), ...(d.fromQuran || []).map(p => ['q', p])];
   const keyP = [];
-  if (cand.length >= 4) for (const r of [0, 1]) {
+  for (const r of [0, 1]) {
     let pool = cand.filter(x => rank(x[1].strength) === r), seen = new Set(keyP.map(x => unitOf(x[1])));
     while (keyP.length < 5 && pool.length) {
       const pick = pool.find(x => !seen.has(unitOf(x[1]))) || pool[0];
@@ -414,8 +414,8 @@ async function viewTorah(i, anchor) {
     if (keyP.length >= 3) break;
   }
   keyP.sort((x, y) => key(x[1].c, x[1].v) - key(y[1].c, y[1].v));
-  const keyHtml = keyP.length ? `<section class="keypar"><h2>${L('מקבילות מרכזיות', 'أبرز التوازيات')}</h2>
-    <p class="muted small">${L('לחצו על מקבילה כדי לקרוא אותה במלואה. כל המקבילות – לפי יחידות הפרשה, למטה.', 'اضغطوا على أي توازٍ لقراءته كاملًا. جميع التوازيات – حسب وحدات البرشا – في الأسفل.')}</p>
+  const keyHtml = keyP.length ? `<section class="keypar"><h2>${L('מקבילות נבחרות', 'توازيات مختارة')}</h2>
+    <p class="muted small">${L('מבחר מן המקבילות המובהקות בפרשה. לחצו על מקבילה כדי לקרוא אותה במלואה.', 'مختارات من أوضح التوازيات في البرشا. اضغطوا على أي توازٍ لقراءته كاملًا.')}</p>
     ${keyP.map(([k, p]) => k === 'p' ? parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, { fold: true, pre: 'k', goto: `p-${p.id}` }) : fqCard(p, true, { fold: true, pre: 'kq', goto: `q-${p.id}` })).join('')}</section>` : '';
   const prev = META.parashot.find(p => p.i === i - 1), next = META.parashot.find(p => p.i === i + 1);
   $('.page', app).innerHTML = `<div class="crumbs">${L('התורה ופירוש האסלאם', 'التوراة وتفسير الإسلام')} · ${L(esc(P.book), esc(P.bookAr || ''))}</div>
@@ -424,12 +424,12 @@ async function viewTorah(i, anchor) {
       `${esc(P.bookAr || '')} ${refAr(P.from[0], P.from[1])} – ${refAr(P.to[0], P.to[1])} · ${arNum(P.verses)} آية · ${arNum(d.parallels.length + (d.fromQuran || []).length)} توازيًا`)}</div>
     ${shareBar(`פרשת ${P.name}`, `برشا ${stripPar(P.nameAr || '')}`, `${P.book} ${ref(P.from[0], P.from[1])} – ${ref(P.to[0], P.to[1])}: התורה עם המקבילות מן הקוראן ומן החדית׳`, `${P.bookAr || ''} – التوراة مع توازياتها من القرآن والحديث`, `b/${i}`)}
     ${NAV}
-    ${keyHtml}
-    <div class="units-h"><h2>${L('הפרשה לפי יחידות', 'البرشا حسب الوحدات')}</h2>${foldAllBtn()}</div>
+    <div class="units-h"><h2>${L('הפרשה לפי יחידות, עם פירוש האסלאם על התורה', 'البرشا حسب الوحدات، مع تفسير الإسلام للتوراة')}</h2>${foldAllBtn()}</div>
     ${body}
+    ${keyHtml}
     ${P.questions || P.questionsAr ? `<div class="qs" id="sec-qs"><h3>${L('לשולחן שבת: שאלות לשיחה וללימוד משותף', 'لمائدة السبت: أسئلة للحوار والدراسة المشتركة')}</h3><div class="two"><div class="pre col-he">${esc(P.questions || '')}</div><div class="pre col-ar ar" lang="ar">${P.questionsAr ? esc(P.questionsAr) : PENDING}</div></div></div>` : ''}
     <div class="pager">${prev ? `<a class="btn" href="#/b/${prev.i}">→ ${L(esc(prev.name), esc(stripPar(prev.nameAr)))}</a>` : '<span></span>'}${next ? `<a class="btn" href="#/b/${next.i}">${L(esc(next.name), esc(stripPar(next.nameAr)))} ←</a>` : ''}</div>`;
-  buildNav($('.page', app), [['.keypar', 'מקבילות מרכזיות', 'أبرز التوازيات'], ['.verses', 'הטקסט המקורי: תורה', 'النص الأصلي: التوراة', 'text'], ['.par-h', 'פירוש האסלאם', 'تفسير الإسلام', 'par'], ['.saadia', 'הערות: תפסיר רס״ג', 'ملاحظات: تفسير سعديا', 'note'], ['#sec-qs', 'שאלות ללימוד משותף', 'أسئلة للدراسة المشتركة']], '.unit[data-unit]');
+  buildNav($('.page', app), [['.verses', 'הטקסט המקורי: תורה', 'النص الأصلي: التوراة', 'text'], ['.par-h', 'פירוש האסלאם', 'تفسير الإسلام', 'par'], ['.saadia', 'הערות: תפסיר רס״ג', 'ملاحظات: تفسير سعديا', 'note'], ['.keypar', 'מקבילות נבחרות', 'توازيات مختارة'], ['#sec-qs', 'שאלות ללימוד משותף', 'أسئلة للدراسة المشتركة']], '.unit[data-unit]');
   $('.side a.on')?.scrollIntoView({ block: 'nearest' });
   scrollToAnchor(anchor && `v-${anchor.replace(':', '-')}`);
 }

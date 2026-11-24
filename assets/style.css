@@ -276,7 +276,7 @@ body:not(.he-first) .apx .ah .ttl.ar{order:-1}
 @media(max-width:700px){.logo-img{width:32px;height:32px}}
 .social-row{margin:6px 0}.social{display:inline-flex;gap:14px}.social a{display:inline-flex;opacity:.85}.social a:hover{opacity:1}.darkmode .social img[src$="x.svg"]{filter:invert(1)}
 /* ---------- folded pages (24.11.2026): key parallels first, the rest opens on click ---------- */
-.keypar{background:var(--chip);border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:14px 0 6px}
+.keypar{background:var(--chip);border:1px solid var(--line);border-radius:14px;padding:10px 14px 6px;margin:24px 0 6px}
 .keypar > h2{margin:2px 0 2px;color:var(--navy)}
 .keypar > p{margin:0 0 6px}
 .keypar .card{background:var(--paper)}
