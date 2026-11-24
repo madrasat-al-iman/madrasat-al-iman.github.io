@@ -267,3 +267,10 @@ body:not(.he-first) .apx .ah .ttl.ar{order:-1}
 .darkmode img.ico[src$="x.svg"]{filter:invert(1)}
 .shr-wa{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .shr-h{display:inline-flex;align-items:center;font-weight:600}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;min-height:36px!important;padding:0!important;border-radius:50%!important;cursor:pointer}
+.ib .ico{margin:0;width:18px;height:18px}
+.acts .ib{width:30px;height:30px;min-height:30px!important;border:1px solid var(--line);background:var(--bg);color:var(--muted)}
+.ib:hover{color:var(--navy);background:var(--chip)!important}
+.logo{display:inline-flex;align-items:center;gap:8px}
+.logo-img{width:40px;height:40px;flex:none}
+@media(max-width:700px){.logo-img{width:32px;height:32px}}

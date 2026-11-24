@@ -94,7 +94,7 @@ def _page(site, route, title, title_ar, desc, body, crumbs, seo, hef):
 <link rel="stylesheet" href="{up}assets/fonts.css"><link rel="stylesheet" href="{up}assets/style.css">
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
 </head><body class="static{" he-first" if hef else ""}">
-<header class="top"><div class="brand"><a href="{up}index.html" class="logo">מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span></a></div>
+<header class="top"><div class="brand"><a href="{up}index.html" class="logo"><img src="{up}assets/logo-96.png" class="logo-img" width="40" height="40" alt="">מדרשת האמונה <span class="sep">·</span> <span lang="ar">مدرسة الإيمان</span></a></div>
 <nav class="tabs"><a href="{up}index.html#/c"><span class="l-he">נושאים לעיון</span><span class="l-ar" lang="ar">موضوعات للتأمل</span></a><a href="{up}index.html#/a"><span class="l-he">הקוראן ותפסיר עם הספר</span><span class="l-ar" lang="ar">القرآن وتفسير أهل الكتاب</span></a><a href="{up}index.html#/b"><span class="l-he">התורה ופירוש האסלאם</span><span class="l-ar" lang="ar">التوراة وتفسير الإسلام</span></a></nav></header>
 <main class="page">
 <div class="crumbs">{' · '.join(f'<a href="{E(u)}">{E(n)}</a>' for n, u in crumbs[:-1])}</div>

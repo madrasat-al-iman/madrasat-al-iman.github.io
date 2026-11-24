@@ -152,7 +152,7 @@ const CARDTXT = {};
 function cardActs(copyText, link, extra = '') {
   const id = 'c' + Math.random().toString(36).slice(2, 9);
   CARDTXT[id] = link ? `${copyText}\n${shareUrl(link)}` : copyText;
-  return `<div class="acts">${extra}<button type="button" data-copy="${id}" title="העתק את המקבילה עם מראי המקום וקישור · انسخ التوازي مع المراجع والرابط">${L('העתק מקבילה', 'انسخ التوازي')}</button>${link ? `<button type="button" data-link="${esc(link)}">${L('קישור', 'رابط')}</button>` : ''}</div>`;
+  return `<div class="acts">${extra}<button type="button" class="ib" data-copy="${id}" ${tip('העתק את המקבילה עם מראי המקום וקישור', 'انسخ التوازي مع المراجع والرابط')}>${COPY_SVG}</button>${link ? `<button type="button" class="ib" data-link="${esc(link)}" ${tip('העתק קישור', 'انسخ الرابط')}>${LINK_SVG}</button>` : ''}</div>`;
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-copy]'); if (c) { copy(CARDTXT[c.dataset.copy] || ''); return; }
@@ -473,6 +473,12 @@ function citation(title, titleAr, url) {
     + `${titleAr ? `«${titleAr}»، ` : ''}مدرسة الإيمان: قاعدة بيانات ثنائية اللغة للتوازيات بين مصادر اليهودية والإسلام، ${url} (تاريخ الاطلاع: ${d}).`;
 }
 const ICON = n => `<img class="ico" src="assets/icons/${n}.svg" alt="" width="16" height="16">`;
+const SVGI = (d, extra = '') => `<svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</g>${extra}</svg>`;
+const LINK_SVG = SVGI('<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>');
+const COPY_SVG = SVGI('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>');
+const QUOTE_SVG = SVGI('<path d="M7 7H4v6h4v-2c0 3-1 5-4 6M17 7h-3v6h4v-2c0 3-1 5-4 6"/>');
+const PRINT_SVG = SVGI('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>');
+const tip = (he, ar) => `title="${ar} · ${he}" aria-label="${ar} · ${he}"`;
 const SHARE_SVG = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></g></svg>';
 const MAIL_SVG = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></g></svg>';
 function shareMenu(d) {
@@ -506,11 +512,8 @@ function shareBar(title, titleAr, summary, summaryAr, route) {
       : `${titleAr} · ${title}\n${clip(summaryAr, 160)}\n${clip(summary, 160)}\nمدرسة الإيمان · מדרשת האמונה:\n${base}${sep}l=both` };
   const key = route || 'home';
   SHARES[key] = { title: `${titleAr} · ${title}`, url: `${base}${sep}l=both`, ...msg };
-  return `<div class="sharebar"><span class="lbl">${L('שיתוף לקבוצת הלימוד', 'مشاركة مع مجموعة الدراسة')}:</span>
-    <button type="button" class="shr" data-share="${esc(key)}">${SHARE_SVG}${L('שיתוף', 'مشاركة')}</button>
-    <button type="button" data-link="${esc(route)}">${L('העתק קישור', 'انسخ الرابط')}</button>
-    <button type="button" data-cite="${esc(title)}" data-cite-ar="${esc(titleAr)}" data-cite-route="${esc(route)}" title="העתק ציטוט ביבליוגרפי לעמוד זה · انسخ إحالة مرجعية لهذه الصفحة">${L('ציטוט', 'إحالة')}</button>
-    <button type="button" class="prt" data-print title="הדפסה או שמירה כ־PDF · طباعة أو حفظ بصيغة PDF">${L('הדפס דף לימוד', 'اطبع ورقة دراسة')}</button></div>
+  return `<div class="sharebar">
+    <button type="button" class="ib" data-share="${esc(key)}" ${tip('שיתוף', 'مشاركة')}>${SHARE_SVG}</button><button type="button" class="ib" data-link="${esc(route)}" ${tip('העתק קישור', 'انسخ الرابط')}>${LINK_SVG}</button><button type="button" class="ib" data-cite="${esc(title)}" data-cite-ar="${esc(titleAr)}" data-cite-route="${esc(route)}" ${tip('העתק ציטוט ביבליוגרפי לעמוד זה', 'انسخ إحالة مرجعية لهذه الصفحة')}>${QUOTE_SVG}</button><button type="button" class="ib" data-print ${tip('הדפסה או שמירה כ־PDF', 'طباعة أو حفظ بصيغة PDF')}>${PRINT_SVG}</button></div>
     <div class="print-head">מדרשת האמונה · <span lang="ar">مدرسة الإيمان</span> — ${esc(base)}</div>`;
 }
 async function viewThemes(code, anchor) {
