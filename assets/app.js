@@ -502,7 +502,8 @@ function shareBar(title, titleAr, summary, summaryAr, route) {
   const msg = {
     he: `${title}\n${clip(summary, 220)}\nמדרשת האמונה – לימוד משותף:\n${base}${sep}l=he`,
     ar: `${titleAr}\n${clip(summaryAr, 220)}\nمدرسة الإيمان – دراسة مشتركة:\n${base}${sep}l=ar`,
-    both: `${title} · ${titleAr}\n${clip(summary, 160)}\n${clip(summaryAr, 160)}\nמדרשת האמונה · مدرسة الإيمان:\n${base}${sep}l=both` };
+    both: HEF ? `${title} · ${titleAr}\n${clip(summary, 160)}\n${clip(summaryAr, 160)}\nמדרשת האמונה · مدرسة الإيمان:\n${base}${sep}l=both`
+      : `${titleAr} · ${title}\n${clip(summaryAr, 160)}\n${clip(summary, 160)}\nمدرسة الإيمان · מדרשת האמונה:\n${base}${sep}l=both` };
   const key = route || 'home';
   SHARES[key] = { title: `${titleAr} · ${title}`, url: `${base}${sep}l=both`, ...msg };
   return `<div class="sharebar"><span class="lbl">${L('שיתוף לקבוצת הלימוד', 'مشاركة مع مجموعة الدراسة')}:</span>
