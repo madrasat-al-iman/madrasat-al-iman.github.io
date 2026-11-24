@@ -13,6 +13,11 @@ const pre = s => esc(s).replace(/\n/g, '<br>');
 // Arabic first everywhere, except the Torah / Nakh sections (DB B), where Hebrew leads
 let HEF = false;
 const L = (he, ar) => HEF ? `<span class="l-he">${he}</span><span class="l-ar" lang="ar">${ar}</span>` : `<span class="l-ar" lang="ar">${ar}</span><span class="l-he">${he}</span>`;
+const NEWS_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSe1PneLa7cO6eKE2X4e95ls7tM-3C8emGgp_rlZvDlTSaRG2w/viewform';
+const newsBox = () => `<div class="newsbox" id="newsletter"><h2>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h2>
+  <div class="two"><p class="col-he">פעם בשבוע, בחמישי או בשישי, בעברית ובערבית: פרשת השבוע בעיני האסלאם, קטע מן הקוראן עם „תפסיר עם הספר“, נושא לעיון מן המאגר ופנייה אמונית קצרה בעניין אקטואלי – עם קישורים לאתר. אפשר להסיר את ההרשמה בכל עת.</p>
+  <p class="col-ar ar" lang="ar">مرة في الأسبوع، يوم الخميس أو الجمعة، بالعربية والعبرية: قراءة التوراة الأسبوعية في ضوء الإسلام، ونص من القرآن مع «تفسير أهل الكتاب»، وموضوع للتأمل من القاعدة، وكلمة إيمانية قصيرة في شأن من شؤون الساعة – مع روابط إلى الموقع. يمكن إلغاء الاشتراك في أي وقت.</p></div>
+  <p><a class="btn primary" href="${NEWS_FORM}" target="_blank" rel="noopener">${L('להרשמה לגיליון', 'للاشتراك في النشرة')}</a> <a class="btn" href="#/news">${L('ארכיון הגיליונות', 'أرشيف النشرات')}</a></p></div>`;
 const flipT = t => HEF ? t : t.split(' · ').reverse().join(' · ');
 const PENDING = `<span class="pending" lang="ar">الترجمة العربية قيد الإعداد</span>`;
 const PENDING_HE = `<span class="pending">התרגום לעברית – בהכנה</span>`;
@@ -240,7 +245,16 @@ async function viewHome() {
       <a class="bigcard" href="#/x"><h3>${L('נספחים', 'ملاحق')}</h3><div class="muted">${L('מחלוקות יסוד · שורשים תאומים · פנינים · צמתים היסטוריים', 'خلافات أساسية · جذور توأم · لآلئ · ملتقيات تاريخية')}</div></a>
       <a class="bigcard" href="#/h"><h3>${L('חדית׳', 'الحديث')}</h3><div class="stat">${c.hadithTranslated}</div><div class="muted">${L(`חדית׳ מתורגמים לעברית, מתוך ${c.hadith} בנוסח הערבי`, `حديثًا مترجمًا إلى العبرية، من أصل ${arNum(c.hadith)} بالنص العربي`)}</div></a>
     </div>
+    ${newsBox()}
   </div>`;
+}
+
+async function viewNews() {
+  markTab('news'); setTitle('הגיליון השבועי · النشرة الأسبوعية');
+  const list = await fetch('newsletter/index.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  app.innerHTML = `<div class="page"><h1>${L('הגיליון השבועי', 'النشرة الأسبوعية')}</h1>${newsBox()}
+    <h2>${L('ארכיון הגיליונות', 'أرشيف النشرات')}</h2>
+    ${list.length ? `<ul class="newslist">${list.map(n => `<li><a href="${esc(n.url)}">${L(esc(n.title || ''), esc(n.titleAr || ''))}</a> <span class="muted small">${esc(n.date || '')}</span></li>`).join('')}</ul>` : `<p class="muted">${L('הגיליון הראשון יתפרסם כאן בקרוב.', 'سيُنشر العدد الأول هنا قريبًا.')}</p>`}</div>`;
 }
 
 async function viewAbout(anchor) {
@@ -273,6 +287,7 @@ async function viewAbout(anchor) {
     <p><button type="button" class="btn" data-cite="" data-cite-ar="" data-cite-route="">${L('העתק ציטוט למאגר', 'انسخ الإحالة إلى القاعدة')}</button></p>
     <p class="small muted">גופנים: Amiri, Amiri Quran, Frank Ruhl Libre, Heebo – ברישיון SIL Open Font License.</p>
     <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה: <a href="${ISSUES}" target="_blank" rel="noopener">דיווח על טעות או הצעת תרגום</a> (דרך GitHub). גם בכל כרטיס מקבילה, תחת „פרטים“, יש קישור לדיווח.</p>
+    <p>לגיליון השבועי (פרשת השבוע, הקוראן, נושא לעיון ופנייה אמונית קצרה): <a href="${NEWS_FORM}" target="_blank" rel="noopener">הרשמה</a> · <a href="#/news">ארכיון הגיליונות</a></p>
     <p>ליצירת קשר במייל: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
    </div>
    <div class="col-ar ar" lang="ar">
@@ -298,6 +313,7 @@ async function viewAbout(anchor) {
     <p class="small">للإحالة إلى صفحة بعينها يُضاف اسم الصفحة في أول الإحالة ورابطها الثابت. وفي كل موضوع وبرشا وسورة، يَنسخ زر «إحالة» في شريط المشاركة إحالةً جاهزة بالعبرية والعربية.</p>
     <p class="small muted">الخطوط: Amiri وAmiri Quran وFrank Ruhl Libre وHeebo – برخصة SIL Open Font License.</p>
     <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب: <a href="${ISSUES}" target="_blank" rel="noopener">الإبلاغ عن خطأ أو اقتراح ترجمة</a> (عبر GitHub). وفي كل بطاقة توازٍ، تحت «تفاصيل»، رابط للإبلاغ أيضًا.</p>
+    <p>النشرة الأسبوعية (التوراة الأسبوعية، والقرآن، وموضوع للتأمل، وكلمة إيمانية قصيرة): <a href="${NEWS_FORM}" target="_blank" rel="noopener">الاشتراك</a> · <a href="#/news">أرشيف النشرات</a></p>
     <p>للتواصل بالبريد الإلكتروني: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
    </div></div></div>`;
   if (anchor === 'cite' || anchor === 'method') scrollToAnchor(anchor);
@@ -705,6 +721,7 @@ async function route() {
     else if (v === 'x') await viewAppendix(a, b);
     else if (v === 'h') await viewHadith(+a || 0, b);
     else if (v === 'about') await viewAbout(a);
+    else if (v === 'news') await viewNews();
     else if (v === 'search') await viewSearch(h.slice(7));
     else await viewHome();
     if (!b) focusMain();

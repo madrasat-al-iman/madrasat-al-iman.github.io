@@ -255,3 +255,6 @@ body:not(.he-first) .src .h .refs .col-ar{order:-1;font-weight:inherit;color:inh
 body:not(.he-first) .src .h .refs .col-he{font-weight:400;color:var(--muted)}
 body:not(.he-first) .apx .ah .chip{order:-2}
 body:not(.he-first) .apx .ah .ttl.ar{order:-1}
+.newsbox{margin:22px 0 6px;padding:14px 16px;border:1px solid var(--line);border-inline-start:4px solid var(--gold);border-radius:12px;background:var(--paper)}
+.newsbox h2{margin-top:0}
+.newslist li{margin:4px 0}
