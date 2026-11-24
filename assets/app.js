@@ -143,7 +143,7 @@ $('#study').onclick = () => {
     <textarea id="inv">${esc(text)}</textarea>
     <div><a class="btn primary" href="${room}" target="_blank" rel="noopener">${L('כנסו לחדר', 'ادخلوا الغرفة')}</a>
     <button class="btn" type="button" id="invCopy">${L('העתק הזמנה', 'انسخ الدعوة')}</button>
-    <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">${L('שלח בוואטסאפ', 'أرسل عبر واتساب')}</a></div>`);
+    <a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">${ICON('whatsapp')} ${L('שלח בוואטסאפ', 'أرسل عبر واتساب')}</a></div>`);
   $('#invCopy').onclick = () => copy($('#inv').value);
 };
 
@@ -472,6 +472,27 @@ function citation(title, titleAr, url) {
   return `${title ? `„${title}“, ` : ''}מדרשת האמונה: מאגר דו־לשוני של מקבילות בין מקורות היהדות והאסלאם, ${url} (נצפה ב־${d}).\n`
     + `${titleAr ? `«${titleAr}»، ` : ''}مدرسة الإيمان: قاعدة بيانات ثنائية اللغة للتوازيات بين مصادر اليهودية والإسلام، ${url} (تاريخ الاطلاع: ${d}).`;
 }
+const ICON = n => `<img class="ico" src="assets/icons/${n}.svg" alt="" width="16" height="16">`;
+const SHARE_SVG = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></g></svg>';
+const MAIL_SVG = '<svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></g></svg>';
+function shareMenu(title, text, url) {
+  const t = encodeURIComponent(text), u = encodeURIComponent(url), tt = encodeURIComponent(title);
+  const item = (href, icon, he, ar) => `<a class="shr-item" href="${href}" target="_blank" rel="noopener">${icon}${L(he, ar)}</a>`;
+  modal(`<h2>${L('שיתוף', 'مشاركة')}</h2><div class="shr-list">
+    ${item(`https://wa.me/?text=${t}`, ICON('whatsapp'), 'וואטסאפ', 'واتساب')}
+    ${item(`https://t.me/share/url?url=${u}&text=${tt}`, ICON('telegram'), 'טלגרם', 'تيليغرام')}
+    ${item(`https://www.facebook.com/sharer/sharer.php?u=${u}`, ICON('facebook'), 'פייסבוק', 'فيسبوك')}
+    ${item(`https://x.com/intent/post?text=${tt}&url=${u}`, ICON('x'), 'X', 'X')}
+    ${item(`mailto:?subject=${tt}&body=${t}`, MAIL_SVG, 'מייל', 'البريد الإلكتروني')}
+    <button type="button" class="shr-item" id="shrCopy">${L('העתק קישור', 'انسخ الرابط')}</button></div>`);
+  $('#shrCopy').onclick = () => copy(url);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-share]'); if (!b) return;
+  const { shareTitle: title, shareText: text, shareUrl: url } = b.dataset;
+  if (navigator.share && matchMedia('(pointer:coarse)').matches) navigator.share({ title, text, url }).catch(() => shareMenu(title, text, url));
+  else shareMenu(title, text, url);
+});
 function shareBar(title, titleAr, summary, summaryAr, route) {
   const base = shareUrl(route), sep = '?';
   const msg = {
@@ -479,8 +500,10 @@ function shareBar(title, titleAr, summary, summaryAr, route) {
     ar: `${titleAr}\n${clip(summaryAr, 220)}\nمدرسة الإيمان – دراسة مشتركة:\n${base}${sep}l=ar`,
     both: `${title} · ${titleAr}\n${clip(summary, 160)}\n${clip(summaryAr, 160)}\nמדרשת האמונה · مدرسة الإيمان:\n${base}${sep}l=both` };
   const wa = k => `https://wa.me/?text=${encodeURIComponent(msg[k])}`;
+  const both = `${base}${sep}l=both`;
   return `<div class="sharebar"><span class="lbl">${L('שיתוף לקבוצת הלימוד', 'مشاركة مع مجموعة الدراسة')}:</span>
-    <a href="${wa('he')}" target="_blank" rel="noopener">${L('וואטסאפ – בעברית', 'واتساب – بالعبرية')}</a><a href="${wa('ar')}" target="_blank" rel="noopener">${L('וואטסאפ – בערבית', 'واتساب – بالعربية')}</a><a href="${wa('both')}" target="_blank" rel="noopener">${L('דו־לשוני', 'ثنائي اللغة')}</a>
+    <a class="wa" href="${wa('ar')}" target="_blank" rel="noopener" title="واتساب – بالعربية · וואטסאפ – בערבית">${ICON('whatsapp')}<span lang="ar">العربية</span></a><a class="wa" href="${wa('he')}" target="_blank" rel="noopener" title="واتساب – بالعبرية · וואטסאפ – בעברית">${ICON('whatsapp')}<span>עברית</span></a><a class="wa" href="${wa('both')}" target="_blank" rel="noopener" title="واتساب – ثنائي اللغة · וואטסאפ – דו־לשוני">${ICON('whatsapp')}<span>${L('דו־לשוני', 'ثنائي اللغة')}</span></a>
+    <button type="button" class="shr" data-share data-share-title="${esc(titleAr + ' · ' + title)}" data-share-text="${esc(msg.both)}" data-share-url="${esc(both)}">${SHARE_SVG}${L('שיתוף', 'مشاركة')}</button>
     <button type="button" data-link="${esc(route)}">${L('העתק קישור', 'انسخ الرابط')}</button>
     <button type="button" data-cite="${esc(title)}" data-cite-ar="${esc(titleAr)}" data-cite-route="${esc(route)}" title="העתק ציטוט ביבליוגרפי לעמוד זה · انسخ إحالة مرجعية لهذه الصفحة">${L('ציטוט', 'إحالة')}</button>
     <button type="button" class="prt" data-print title="הדפסה או שמירה כ־PDF · طباعة أو حفظ بصيغة PDF">${L('הדפס דף לימוד', 'اطبع ورقة دراسة')}</button></div>
