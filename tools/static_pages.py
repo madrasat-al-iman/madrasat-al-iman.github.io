@@ -64,7 +64,7 @@ def ar_first(html):
 
 def fold(body):
     """Parallels and sources open on click (the heading stays visible; the full text is in the page for search engines)."""
-    body = re.sub(r'<section class="(card|src)"><h3>(.*?)</h3>', r'<details class="\1 fold"><summary class="card-h"><div><h3>\2</h3></div></summary><div class="cb">', body)
+    body = re.sub(r'<section class="(card|src)"((?: id="[^"]*")?)><h3>(.*?)</h3>', r'<details class="\1 fold"\2><summary class="card-h"><div><h3>\3</h3></div></summary><div class="cb">', body)
     return body.replace('</section>', '</div></details>')
 
 
@@ -155,15 +155,22 @@ def build(sura_he, nakh_ar):
             by.setdefault((x['c'], x['v']), []).append(x)
         body = []
         for v in d['verses']:
-            body.append(f'<div class="vrow"><div class="he"><span class="num">{v["c"]}:{v["v"]}</span>{E(v["he"])}</div><div class="ar" lang="ar">{E(v["ar"])}</div></div>')
+            body.append(f'<div class="vrow" id="v-{v["c"]}-{v["v"]}"><div class="he"><span class="num">{v["c"]}:{v["v"]}</span>{E(v["he"])}</div><div class="ar" lang="ar">{E(v["ar"])}</div></div>')
             for x in by.get((v['c'], v['v']), []):
-                body.append(f'<section class="card"><h3>{E(x.get("ref") or "")} ⇄ {E(x.get("src") or "")}</h3>'
+                body.append(f'<section class="card" id="p-{E(x.get("id") or "")}"><h3>{E(x.get("ref") or "")} ⇄ {E(x.get("src") or "")}</h3>'
                             f'{two(x.get("textHe"), x.get("textAr"))}{two(x.get("note"), x.get("noteAr"), "note")}{dating(x.get("dt"), D)}</section>')
-        desc = f"{P['book']} – פרשת {P['name']}: נוסח המסורה ותרגום ון־דייק, עם {len(d['parallels'])} מקבילות מן הקוראן ומן החדית׳ · {P.get('bookAr') or ''} – برشا {ar_name}"
+        us = [u for u in d.get('units') or [] if u.get('name')]
+        u0 = next((u for u in us if u.get('type') == 'סיפור'), us[0] if us else None)
+        ctx_he = f" ({u0['name']})" if u0 else ''
+        ctx_ar = f" ({u0['nameAr']})" if u0 and u0.get('nameAr') else ''
+        uhe = '، '.join(u['name'] for u in us[:4]).replace('،', ',')
+        uar = '، '.join(u['nameAr'] for u in us[:4] if u.get('nameAr'))
+        desc = (f"{P['book']} – פרשת {P['name']}: נוסח המסורה ותרגום ון־דייק, עם {len(d['parallels'])} מקבילות מן הקוראן ומן החדית׳"
+                + (f" ({uhe})" if uhe else '') + f" · {P.get('bookAr') or ''} – برشا {ar_name}" + (f" ({uar})" if uar else ''))
         route = f"b/{p['i']}"
         pages.append((route, page(site, route, f"פרשת {P['name']}", f"برشا {ar_name}", desc, '\n'.join(body),
                                   [home, ('התורה ופירוש האסלאם', site + '#/b'), (f"פרשת {P['name']}", f'{site}{route}.html')],
-                                  (f"פרשת {P['name']} בקוראן ובחדית׳", f"برشا {ar_name} في القرآن والحديث"))))
+                                  (f"פרשת {P['name']}{ctx_he} בקוראן ובחדית׳", f"برشا «{ar_name}»{ctx_ar} في القرآن والحديث"))))
 
     # suras
     for s in meta['suras']:
@@ -173,7 +180,7 @@ def build(sura_he, nakh_ar):
             by.setdefault(int(x.get('b') or x.get('a') or 1), []).append(x)
         body = []
         for v in d['verses']:
-            body.append(f'<div class="vrow"><div class="he"><span class="num">{v["v"]}</span>{E(v["he"] or "")}</div><div class="ar q-text" lang="ar">{E(v["ar"] or "")} ﴿{v["v"]}﴾</div></div>')
+            body.append(f'<div class="vrow" id="v-{v["v"]}"><div class="he"><span class="num">{v["v"]}</span>{E(v["he"] or "")}</div><div class="ar q-text" lang="ar">{E(v["ar"] or "")} ﴿{v["v"]}﴾</div></div>')
             for x in by.get(v['v'], []):
                 body.append(f'<section class="card"><h3>{s["n"]}:{x.get("a")} ⇄ {E(x.get("ref") or "")}</h3>'
                             f'{two(x.get("srcHe"), x.get("srcAr"))}{two(x.get("note"), x.get("noteAr"), "note")}{dating(x.get("dt"), D)}</section>')
@@ -197,6 +204,82 @@ def build(sura_he, nakh_ar):
         pages.append((route, page(site, route, b['book'], nakh_ar.get(b['book'], ''), desc, '\n'.join(body),
                                   [home, ('נביאים וכתובים', site + '#/n'), (b['book'], f'{site}{route}.html')],
                                   (f"{b['book']} בקוראן ובחדית׳", f"{nakh_ar.get(b['book'], '')} في القرآن والحديث"))))
+
+    # translated hadith, one page per collection (only hadith that have a Hebrew translation)
+    COLL_FULL = {'בוח׳ארי': ('צחיח אל־בוח׳ארי', 'صحيح البخاري'), 'מוסלם': ('צחיח מוסלם', 'صحيح مسلم'), 'תרמד׳י': ('סונן א־תרמד׳י', 'سنن الترمذي'),
+                 'אבו דאוד': ('סונן אבו דאוד', 'سنن أبي داود'), 'נסאאי': ('סונן א־נסאאי', 'سنن النسائي'), 'אבן מאג׳ה': ('סונן אבן מאג׳ה', 'سنن ابن ماجه'),
+                 'מאלכ': ('אל־מֻוַטַּא של מאלכ', 'موطأ مالك'), 'דארמי': ('סונן א־דארמי', 'سنن الدارمي')}
+    for c in meta.get('hadith', []):
+        if not c.get('translated'):
+            continue
+        d = J(f"hadith/{c['i']:02d}.json")
+        he_full, ar_full = COLL_FULL.get(d['collection'], (d['collection'], ''))
+        items = [x for x in d['items'] if x.get('he')]
+        body = [f'<p><span class="l-he">{len(items)} חדית׳ מתוך {E(he_full)} שתורגמו לעברית במיזם, בנוסח הערבי המלא ובתרגום עברי חדש. '
+                f'הנוסח הערבי לפי sunnah.com.</span> <span class="l-ar" lang="ar">{len(items)} حديثًا من {E(ar_full)} تُرجمت إلى العبرية في المشروع، بالنص العربي الكامل مع ترجمة عبرية جديدة. النص العربي حسب sunnah.com.</span></p>']
+        for x in items:
+            book = f' · {E(x["book"])}' if x.get('book') else ''
+            book_ar = f' · {E(x["bookAr"])}' if x.get('bookAr') else ''
+            body.append(f'<section class="card" id="h-{E(str(x["n"]))}"><h3><span class="l-he">{E(he_full)} {E(str(x["n"]))}{book}</span> '
+                        f'<span class="l-ar" lang="ar">{E(ar_full)} {E(str(x["n"]))}{book_ar}</span></h3>{two(x.get("he"), x.get("ar"))}</section>')
+        desc = (f"{len(items)} חדית׳ מתוך {he_full} בנוסח הערבי ובתרגום עברי חדש – מאגר המקבילות בין הקוראן, החדית׳, המקרא וספרות חז״ל"
+                f" · {len(items)} حديثًا من {ar_full} بالنص العربي مع ترجمة عبرية جديدة")
+        route = f"h/{c['i']}"
+        pages.append((route, page(site, route, he_full, ar_full, desc, '\n'.join(body),
+                                  [home, ('חדית׳', site + '#/h'), (he_full, f'{site}{route}.html')],
+                                  (f"{he_full}: חדית׳ בתרגום עברי", f"{ar_full}: أحاديث مع ترجمة عبرية"))))
+
+    # appendices (disputes, twin roots, pearls, historical crossroads)
+    try:
+        js = open(os.path.join(ROOT, 'assets', 'app.js'), encoding='utf-8').read()
+        m = re.search(r'const HDR_AR = \{(.*?)\};', js, re.S)
+        HDR_AR = dict(re.findall(r"'([^']+)': '([^']*)'", m.group(1))) if m else {}
+        m = re.search(r'const APP_AR = \{(.*?)\};', js, re.S)
+        APP_AR = dict(re.findall(r"(\w+): '([^']*)'", m.group(1))) if m else {}
+    except OSError:
+        HDR_AR, APP_AR = {}, {}
+    AR_OF = {'משמעות ומראי מקום ביהדות': 'משמעות ביהדות – ערבית', 'משמעות ומראי מקום באסלאם': 'משמעות באסלאם – ערבית',
+             'נקודת המפגש והמשמעות הרעיונית': 'נקודת המפגש – ערבית', 'העמדה הקלאסית ביהדות (ומראי מקום)': 'העמדה ביהדות – ערבית',
+             'העמדה הקלאסית באסלאם (ומראי מקום)': 'העמדה באסלאם – ערבית', 'שורש הפער התיאולוגי / הפרשני': 'שורש הפער – ערבית',
+             'מפתח ללימוד מכבד בחברותא': 'מפתח ללימוד – ערבית', 'המקור היהודי (עברית)': 'המקור היהודי – ערבית',
+             'מוקד ההשפעה והדיאלוג ההדדי': 'מוקד ההשפעה – ערבית'}
+    is_ar = lambda t: bool(re.search(r'[\u0600-\u06FF]', t or ''))
+    APX_DESC = {'pearls': ('אמרות קצרות ומפתיעות שבהן חז״ל והחדית׳ אומרים כמעט אותו דבר, עם מראי מקום ובשתי השפות',
+                           'أقوال قصيرة مدهشة يقول فيها الحكماء والحديث الشيءَ نفسه تقريبًا، مع المراجع وباللغتين'),
+                'roots': ('מונחי יסוד בעברית ובערבית מאותו שורש שמי, ומשמעותם ביהדות ובאסלאם', 'مصطلحات أساسية بالعبرية والعربية من الجذر السامي نفسه ومعناها في اليهودية والإسلام'),
+                'disputes': ('מחלוקות היסוד בין היהדות לאסלאם, בהגינות ובכבוד: העמדה הקלאסית של כל צד ומפתח ללימוד משותף',
+                             'الخلافات الأساسية بين اليهودية والإسلام بإنصاف واحترام: الموقف الكلاسيكي لكل طرف ومفتاح للدراسة المشتركة'),
+                'crossroads': ('צומתי מפגש היסטוריים בין יהודים למוסלמים: תקופות, מרכזים, דמויות וחיבורים',
+                               'ملتقيات تاريخية بين اليهود والمسلمين: حقب ومراكز وشخصيات ومؤلفات')}
+    apx = J('appendices.json')
+    for slug, t in apx.items():
+        H = t['headers']
+        has_code = H[0] == 'קוד'
+        st = 1 if has_code else 0
+        arcol = lambda j: H.index(AR_OF.get(H[j], H[j] + ' – ערבית')) if AR_OF.get(H[j], H[j] + ' – ערבית') in H else -1
+        t_ar = st + 1 if has_code and (is_ar(H[st + 1]) or H[st + 1] == 'המונח בערבית') else arcol(st)
+        skip = {st, t_ar} | {j for j, h in enumerate(H) if h.endswith(' – ערבית') or is_ar(h) or 'אימות' in h}
+        if has_code:
+            skip.add(0)
+        body = []
+        for r in t['rows']:
+            code = r[0] if has_code else ''
+            head = (f'<span class="l-he">{E(code + " · " if code else "")}{E(r[st] or "")}</span> '
+                    f'<span class="l-ar" lang="ar">{E(r[t_ar] or "") if t_ar >= 0 else ""}</span>')
+            fields = []
+            for j, h in enumerate(H):
+                if j in skip or j >= len(r) or not r[j]:
+                    continue
+                a = arcol(j)
+                lab = f'<p class="muted small"><b><span class="l-he">{E(h)}</span> <span class="l-ar" lang="ar">{E(HDR_AR.get(h, ""))}</span></b></p>'
+                fields.append(lab + two(r[j], r[a] if 0 <= a < len(r) else ''))
+            body.append(f'<section class="card"{f" id={chr(34)}{E(code)}{chr(34)}" if code else ""}><h3>{head}</h3>{"".join(fields)}</section>')
+        dhe, dar = APX_DESC.get(slug, (t['title'], APP_AR.get(slug, '')))
+        route = f'x/{slug}'
+        title_ar = APP_AR.get(slug, '')
+        pages.append((route, page(site, route, t['title'], title_ar, f'{dhe} ({len(t["rows"])}) · {dar}', '\n'.join(body),
+                                  [home, ('נספחים', site + '#/x'), (t['title'], f'{site}{route}.html')],
+                                  (f"{t['title']} – בין היהדות לאסלאם", f"{title_ar} – بين اليهودية والإسلام"))))
 
     today = datetime.date.today().isoformat()
     old_mod = {}

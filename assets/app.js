@@ -102,7 +102,7 @@ function setTitle(t) { const site = flipT('מדרשת האמונה · مدرسة
 function focusMain() { const h = $('#app h1'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
 function markTab(t) {
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
-  $('#moreBtn').classList.toggle('on', ['n', 'x', 'h'].includes(t));
+  $('#moreBtn').classList.toggle('on', ['n', 'x', 'h', 'saved'].includes(t));
   setMore(false);
 }
 const setMore = open => { $('#more').classList.toggle('open', open); $('#moreBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); };
@@ -149,13 +149,54 @@ $('#study').onclick = () => {
 
 /* ---------- cards ---------- */
 const CARDTXT = {};
+/* ---------- saved for study (kept in this browser only) ---------- */
+let SAVED = store.get('saved', []);
+const SAVEMAP = {};
+function updSavedCount() { $$('.svcount').forEach(x => { x.textContent = SAVED.length ? `(${SAVED.length})` : ''; }); }
+function toggleSave(btn) {
+  const m = SAVEMAP[btn.dataset.save]; if (!m) return;
+  SAVED = store.get('saved', []);
+  const i = SAVED.findIndex(x => x.k === m.k);
+  if (i >= 0) SAVED.splice(i, 1); else SAVED.push({ k: m.k, r: m.r, x: m.x, d: new Date().toISOString().slice(0, 10) });
+  store.set('saved', SAVED);
+  const on = i < 0; btn.classList.toggle('on', on); btn.setAttribute('aria-pressed', String(on));
+  toast(on ? 'נשמר ב„שמורים ללימוד“ · حُفظ في «المحفوظات للدراسة»' : 'הוסר מהשמורים · أُزيل من المحفوظات');
+  updSavedCount();
+}
+async function viewSaved() {
+  markTab('saved');
+  setTitle('שמורים ללימוד · المحفوظات للدراسة');
+  SAVED = store.get('saved', []);
+  const isArLine = l => /[\u0600-\u06FF]/.test(l) && !/[\u05D0-\u05EA]/.test(l);
+  const render = () => {
+    app.innerHTML = `<div class="page saved"><h1>${L('שמורים ללימוד', 'المحفوظات للدراسة')}</h1>
+      <p class="muted">${L('המקבילות והמקורות שסימנתם בסימנייה נשמרים בדפדפן הזה בלבד, ואינם נשלחים לשום מקום. אפשר להדפיס אותם יחד כדף לימוד אחד, או להעתיק את כולם עם הקישורים.',
+        'التوازيات والمصادر التي علّمتموها بالعلامة تُحفظ في هذا المتصفح فقط، ولا تُرسَل إلى أي مكان. يمكن طباعتها معًا كورقة دراسة واحدة، أو نسخها كلها مع الروابط.')}</p>
+      ${SAVED.length ? `<div class="sharebar"><button type="button" class="btn primary" data-print>${PRINT_SVG} ${L('הדפס דף לימוד', 'اطبع ورقة دراسة')}</button> <button type="button" class="btn" id="svCopy">${COPY_SVG} ${L('העתק הכול', 'انسخ الكل')}</button> <button type="button" class="btn" id="svClear">${L('נקה הכול', 'امسح الكل')}</button></div>`
+        : `<p>${L('עדיין לא נשמר דבר. בכל כרטיס מקבילה או מקור יש סימן סימנייה – לחיצה עליו שומרת את הכרטיס כאן.', 'لم يُحفظ شيء بعد. في كل بطاقة توازٍ أو مصدر علامة حفظ – الضغط عليها يحفظ البطاقة هنا.')}</p>`}
+      <div id="svl">${SAVED.map((x, j) => { const ls = x.x.split('\n'); return `<div class="card"><div class="card-h"><div><span class="t">${esc(ls[0])}</span> <span class="muted small">${esc(x.d || '')}</span></div><div class="acts"><a class="ib" href="#/${esc(x.r)}" ${tip('למקום במאגר', 'إلى موضعه في القاعدة')}>${LINK_SVG}</a><button type="button" class="ib" data-svdel="${j}" ${tip('הסר מהשמורים', 'أزل من المحفوظات')}>✕</button></div></div>
+        ${ls.slice(1).map(l => isArLine(l) ? `<p class="ar" lang="ar" dir="rtl">${esc(l)}</p>` : `<p dir="auto">${esc(l)}</p>`).join('')}<p class="muted small print-only">${esc(shareUrl(x.r))}</p></div>`; }).join('')}</div></div>`;
+    const cp = $('#svCopy'); if (cp) cp.onclick = () => copy(SAVED.map(x => `${x.x}\n${shareUrl(x.r)}`).join('\n\n'));
+    const cl = $('#svClear'); if (cl) cl.onclick = () => { if (confirm('למחוק את כל השמורים? · حذف كل المحفوظات؟')) { SAVED = []; store.set('saved', SAVED); updSavedCount(); render(); } };
+    $('#svl').onclick = e => { const b = e.target.closest('[data-svdel]'); if (!b) return; SAVED.splice(+b.dataset.svdel, 1); store.set('saved', SAVED); updSavedCount(); render(); };
+  };
+  render();
+}
+
 function cardActs(copyText, link, extra = '') {
   const id = 'c' + Math.random().toString(36).slice(2, 9);
   CARDTXT[id] = link ? `${copyText}\n${shareUrl(link)}` : copyText;
-  return `<div class="acts">${extra}<button type="button" class="ib" data-copy="${id}" ${tip('העתק את המקבילה עם מראי המקום וקישור', 'انسخ التوازي مع المراجع والرابط')}>${COPY_SVG}</button>${link ? `<button type="button" class="ib" data-link="${esc(link)}" ${tip('העתק קישור', 'انسخ الرابط')}>${LINK_SVG}</button>` : ''}</div>`;
+  let sv = '';
+  if (link) {
+    const k = link + '|' + copyText.split('\n')[0]; SAVEMAP[id] = { k, r: link, x: copyText };
+    const on = SAVED.some(x => x.k === k);
+    sv = `<button type="button" class="ib sv${on ? ' on' : ''}" data-save="${id}" aria-pressed="${on}" ${tip('שמור ללימוד', 'احفظ للدراسة')}>${BOOKMARK_SVG}</button>`;
+  }
+  return `<div class="acts">${extra}${sv}<button type="button" class="ib" data-copy="${id}" ${tip('העתק את המקבילה עם מראי המקום וקישור', 'انسخ التوازي مع المراجع والرابط')}>${COPY_SVG}</button>${link ? `<button type="button" class="ib" data-link="${esc(link)}" ${tip('העתק קישור', 'انسخ الرابط')}>${LINK_SVG}</button>` : ''}</div>`;
 }
 document.addEventListener('click', e => {
   const c = e.target.closest('[data-copy]'); if (c) { copy(CARDTXT[c.dataset.copy] || ''); return; }
+  const svb = e.target.closest('[data-save]'); if (svb) { toggleSave(svb); return; }
   const l = e.target.closest('[data-link]'); if (l) { copy(shareUrl(l.dataset.link)); return; }
   const p = e.target.closest('[data-play]'); if (p) { play(p.dataset.play, p); return; }
   if (e.target.closest('[data-print]')) { window.print(); return; }
@@ -547,7 +588,7 @@ const CFIELDS = [['quran', 'קוראן', 'القرآن'], ['hadith', 'חדית׳
 const GROUP_AR = { 'אמונה': 'الإيمان', 'פולחן': 'العبادة', 'סיפורים': 'القصص', 'מוסר': 'الأخلاق', 'משפט': 'الشريعة والقضاء', 'משפחה וחברה': 'الأسرة والمجتمع', 'אחרית הימים': 'آخر الزمان', 'ארץ ומקום': 'الأرض والمكان', 'חברה ומשפט': 'المجتمع والشريعة', 'נבואה וכתבי הקודש': 'النبوة والكتب المقدسة', 'מלחמה ושלום': 'الحرب والسلام', 'צדקה וכלכלה': 'الصدقة والاقتصاد' };
 const STARTERS = ['N09', 'S04', 'N02', 'N04', 'N29', 'S09'];
 /* pages that have a static share page (with their own title and description for WhatsApp / search engines) */
-const shareUrl = route => /^(c\/[A-Z]\d+|b\/\d+|a\/\d+|n\/\d+)$/.test(route)
+const shareUrl = route => /^(c\/[A-Z]\d+|b\/\d+|a\/\d+|n\/\d+|h\/\d+|x\/(?:pearls|roots|disputes|crossroads))$/.test(route)
   ? location.origin + location.pathname.replace(/index\.html$/, '') + route + '.html' : location.origin + location.pathname + '#/' + route;
 /* bibliographic citation for a page (about page, "how to cite") */
 function citation(title, titleAr, url) {
@@ -558,6 +599,7 @@ function citation(title, titleAr, url) {
 const ICON = n => `<img class="ico" src="assets/icons/${n}.svg" alt="" width="16" height="16">`;
 const SVGI = (d, extra = '') => `<svg class="ico" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</g>${extra}</svg>`;
 const LINK_SVG = SVGI('<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>');
+const BOOKMARK_SVG = SVGI('<path d="M6 3h12v18l-6-4.5L6 21z"/>');
 const COPY_SVG = SVGI('<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/>');
 const QUOTE_SVG = SVGI('<path d="M7 7H4v6h4v-2c0 3-1 5-4 6M17 7h-3v6h4v-2c0 3-1 5-4 6"/>');
 const PRINT_SVG = SVGI('<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>');
@@ -818,7 +860,7 @@ function scrollToAnchor(id) {
 
 /* ---------- router ---------- */
 async function route() {
-  for (const k in CARDTXT) delete CARDTXT[k];
+  for (const k in CARDTXT) delete CARDTXT[k]; for (const k in SAVEMAP) delete SAVEMAP[k];
   if (AUDIO) { AUDIO.pause(); AUDIO = null; }
   let h = decodeURIComponent(location.hash.replace(/^#\/?/, ''));
   const lm = h.match(/\?l=(he|ar|both)$/);
@@ -835,6 +877,7 @@ async function route() {
     else if (v === 'h') await viewHadith(+a || 0, b);
     else if (v === 'about') await viewAbout(a);
     else if (v === 'news') await viewNews();
+    else if (v === 'saved') await viewSaved();
     else if (v === 'search') await viewSearch(h.slice(7));
     else await viewHome();
     if (!b) focusMain();
@@ -846,6 +889,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
   applySettings();
   META = await J('meta.json');
   $('#built').innerHTML = L(`עדכון אחרון: ${META.built}`, `آخر تحديث: ${META.built}`);
+  updSavedCount();
   route();
 })();
 // keep the page map just under the sticky header
