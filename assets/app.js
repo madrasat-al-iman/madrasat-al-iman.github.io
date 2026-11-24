@@ -270,6 +270,7 @@ async function viewAbout(anchor) {
     <p><button type="button" class="btn" data-cite="" data-cite-ar="" data-cite-route="">${L('העתק ציטוט למאגר', 'انسخ الإحالة إلى القاعدة')}</button></p>
     <p class="small muted">גופנים: Amiri, Amiri Quran, Frank Ruhl Libre, Heebo – ברישיון SIL Open Font License.</p>
     <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה: <a href="${ISSUES}" target="_blank" rel="noopener">דיווח על טעות או הצעת תרגום</a> (דרך GitHub). גם בכל כרטיס מקבילה, תחת „פרטים“, יש קישור לדיווח.</p>
+    <p>ליצירת קשר במייל: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
    </div>
    <div class="col-ar ar" lang="ar">
     <p><b>مدرسة الإيمان</b> قاعدة بيانات ثنائية اللغة، بالعبرية والعربية، تضع مصادر اليهودية والإسلام بعضها قبالة بعض: التوراة والأنبياء والكتب وأدب الحكماء قبالة القرآن والحديث. وهي معدّة للدراسة المشتركة («الحَبروتا») بين اليهود والمسلمين، وللتأمل باحترام في أوجه الشبه والاختلاف بين التقليدين.</p>
@@ -294,6 +295,7 @@ async function viewAbout(anchor) {
     <p class="small">للإحالة إلى صفحة بعينها يُضاف اسم الصفحة في أول الإحالة ورابطها الثابت. وفي كل موضوع وبرشا وسورة، يَنسخ زر «إحالة» في شريط المشاركة إحالةً جاهزة بالعبرية والعربية.</p>
     <p class="small muted">الخطوط: Amiri وAmiri Quran وFrank Ruhl Libre وHeebo – برخصة SIL Open Font License.</p>
     <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب: <a href="${ISSUES}" target="_blank" rel="noopener">الإبلاغ عن خطأ أو اقتراح ترجمة</a> (عبر GitHub). وفي كل بطاقة توازٍ، تحت «تفاصيل»، رابط للإبلاغ أيضًا.</p>
+    <p>للتواصل بالبريد الإلكتروني: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
    </div></div></div>`;
   if (anchor === 'cite' || anchor === 'method') scrollToAnchor(anchor);
 }

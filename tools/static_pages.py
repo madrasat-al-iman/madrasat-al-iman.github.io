@@ -86,7 +86,7 @@ def page(site, route, title, title_ar, desc, body, crumbs, seo=None):
 {body}
 <p><a class="btn" href="{E(app_url)}"><span class="l-he">לתצוגה המלאה באתר</span><span class="l-ar" lang="ar">إلى العرض الكامل في الموقع</span></a></p>
 </main>
-<footer class="foot"><p>מדרשת האמונה — מאגר דו־לשוני של מקבילות בין המקרא, חז״ל, הקוראן והחדית׳ · <span lang="ar">مدرسة الإيمان — قاعدة بيانات ثنائية اللغة للتوازيات</span></p></footer>
+<footer class="foot"><p>מדרשת האמונה — מאגר דו־לשוני של מקבילות בין המקרא, חז״ל, הקוראן והחדית׳ · <span lang="ar">مدرسة الإيمان — قاعدة بيانات ثنائية اللغة للتوازيات</span></p><p>צור קשר · <span lang="ar">تواصل معنا</span>: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p></footer>
 </body></html>
 """
 
