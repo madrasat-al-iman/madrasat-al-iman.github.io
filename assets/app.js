@@ -305,7 +305,10 @@ async function viewHome() {
   const wk = weeklyParasha(), vayeshev = META.parashot.find(p => p.name === 'וישב');
   const th = await J('themes.json').catch(() => null);
   const star = th && th.topics.find(t => t.code === STARTERS[0]);
+  const news = await fetch('newsletter/index.json').then(r => r.ok ? r.json() : []).catch(() => []);
+  const last = news.slice().sort((a, b) => (a.date < b.date ? 1 : -1))[0];
   const gates = [
+    last ? `<a class="bigcard gate" href="${esc(last.url)}"><div class="muted small">${L('הגיליון השבועי האחרון', 'آخر نشرة أسبوعية')}</div><h3>${L(esc(last.title), esc(last.titleAr || ''))}</h3><div class="muted">${L('לקריאה, לשיתוף ולהדפסה (אפשר לשמור כ־PDF)', 'للقراءة والمشاركة والطباعة (يمكن الحفظ بصيغة PDF)')}</div></a>` : '',
     wk && wk.ps.length ? `<a class="bigcard gate" href="#/b/${wk.ps[0].i}"><div class="muted small">${L('פרשת השבוע', 'برشا الأسبوع')}</div><h3>${L(esc(wk.ps.map(p => p.name).join('–')), esc(wk.ps.map(p => stripPar(p.nameAr || '')).join('–')))}</h3><div class="muted">${L('הפרשה עם המקבילות מן הקוראן ומן החדית׳', 'البرشا مع توازياتها من القرآن والحديث')}</div></a>` : '',
     vayeshev ? `<a class="bigcard gate" href="#/a/12"><div class="muted small">${L('סיפור אחד, שני ספרים', 'قصة واحدة في كتابين')}</div><h3>${L('יוסף: סורה 12 מול פרשת וישב', 'يوسف: سورة ١٢ قبالة برشا «فَيِّيشِف»')}</h3><div class="muted">${L('הסורה כולה לצד ספר בראשית, פסוק מול פסוק', 'السورة كلها إلى جانب سفر التكوين، آيةً آية')}</div></a>` : '',
     star ? `<a class="bigcard gate" href="#/c/${star.code}"><div class="muted small">${L('נושא מומלץ לחברותא', 'موضوع مقترح للدراسة المشتركة')}</div><h3>${L(esc(star.title), esc(star.titleAr || ''))}</h3><div class="muted">${L(`${star.nsources} מקורות במלואם, עם שאלות לשיחה`, `${arNum(star.nsources)} مصدرًا كاملًا، مع أسئلة للحوار`)}</div></a>` : '',

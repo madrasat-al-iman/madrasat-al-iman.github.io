@@ -330,3 +330,4 @@ details.refs-all > .fieldrow{padding:0 12px}
 .svcount{font-size:.85em;color:var(--gold)} .tabs a.on .svcount{color:inherit}
 .saved .card p{margin:.35em 0} .print-only{display:none}
 @media print{.print-only{display:block}}
+.apx .fv{white-space:pre-line}
