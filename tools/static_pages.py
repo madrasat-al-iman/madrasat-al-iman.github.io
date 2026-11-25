@@ -307,6 +307,11 @@ def build(sura_he, nakh_ar):
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         f.write(f'  <url><loc>{site}</loc><lastmod>{today}</lastmod></url>\n')
         f.write(''.join(f'  <url><loc>{site}{r}.html</loc><lastmod>{mods[r]}</lastmod></url>\n' for r, _ in pages))
+        try:    # archived weekly newsletters (tools/newsletter_page.py)
+            for n in json.load(open(os.path.join(ROOT, 'newsletter', 'index.json'), encoding='utf-8')):
+                f.write(f'  <url><loc>{site}{n["url"]}</loc><lastmod>{n["date"]}</lastmod></url>\n')
+        except (OSError, ValueError, KeyError):
+            pass
         f.write('</urlset>\n')
     with open(os.path.join(ROOT, 'robots.txt'), 'w', encoding='utf-8') as f:
         f.write(f'User-agent: *\nAllow: /\nSitemap: {site}sitemap.xml\n')
