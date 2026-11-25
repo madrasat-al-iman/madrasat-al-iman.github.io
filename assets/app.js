@@ -336,6 +336,46 @@ async function viewNews() {
     ${list.length ? `<ul class="newslist">${list.map(n => `<li><a href="${esc(n.url)}">${L(esc(n.title || ''), esc(n.titleAr || ''))}</a> <span class="muted small">${esc(n.date || '')}</span></li>`).join('')}</ul>` : `<p class="muted">${L('הגיליון הראשון יתפרסם כאן בקרוב.', 'سيُنشر العدد الأول هنا قريبًا.')}</p>`}</div>`;
 }
 
+const MAIL = 'madrasataliman@gmail.com';
+const SOCIALS = [['https://www.facebook.com/profile.php?id=61596889471323', 'facebook', 'Facebook', 'פייסבוק', 'فيسبوك'],
+  ['https://www.instagram.com/madrasataliman/', 'instagram', 'Instagram', 'אינסטגרם', 'إنستغرام'],
+  ['https://x.com/madrasataliman', 'x', 'X', 'X', 'إكس'],
+  ['https://t.me/madrasat_al_iman', 'telegram', 'Telegram', 'טלגרם', 'تيليغرام'],
+  ['https://whatsapp.com/channel/0029VbDmLGZLdQeVpyVroX2V', 'whatsapp', 'WhatsApp', 'ערוץ וואטסאפ', 'قناة واتساب']];
+
+async function viewContact(anchor) {
+  markTab('contact'); setTitle('צור קשר · تواصل معنا');
+  const soc = SOCIALS.map(([u, ic, n, he, ar]) => `<li><a href="${u}" target="_blank" rel="noopener"><img src="assets/icons/${ic}.svg" width="18" height="18" alt="" style="vertical-align:middle"> ${L(he, ar)}</a></li>`).join('');
+  app.innerHTML = `<div class="page"><h1>${L('צור קשר', 'تواصل معنا')}</h1>
+  <p>${L('נשמח לשמוע מכם – בערבית, בעברית או באנגלית.', 'يسعدنا أن نسمع منكم – بالعربية أو العبرية أو الإنجليزية.')} <a href="mailto:${MAIL}" dir="ltr">${MAIL}</a></p>
+  ${newsBox()}
+  <section class="card" id="feedback"><h2>${L('הערות, תיקונים והצעות', 'ملاحظات وتصويبات واقتراحات')}</h2>
+  <div class="two"><div class="col-ar ar" lang="ar"><p>وجدتم خطأً في نصّ أو في ترجمة، أو مقابلةً لا تستقيم، أو لديكم اقتراح لمصدر أو لموضوع جديد؟ اكتبوا لنا بالبريد الإلكتروني، واذكروا الصفحة أو المرجع. كلّ رسالة تُقرأ، والتصويبات تُدرَس وتُدخَل إلى القاعدة.</p></div>
+  <div class="col-he"><p>מצאתם טעות בנוסח או בתרגום, מקבילה שאינה מדויקת, או שיש לכם הצעה למקור או לנושא חדש? כתבו לנו במייל, וציינו את הדף או את מראה המקום. כל פנייה נקראת, והתיקונים נבדקים ומוכנסים למאגר.</p></div></div>
+  <p><a class="btn primary" href="mailto:${MAIL}?subject=${encodeURIComponent('تصويب · תיקון')}">${L('לשליחת תיקון או הצעה', 'لإرسال تصويب أو اقتراح')}</a> <a class="btn" href="${ISSUES}" target="_blank" rel="noopener">${L('דיווח דרך GitHub', 'الإبلاغ عبر GitHub')}</a></p></section>
+  <section class="card" id="guest"><h2>${L('מאמרי אורח', 'مقالات الضيوف')}</h2>
+  <div class="two"><div class="col-ar ar" lang="ar"><p>ندعو الباحثين والمعلّمين والمؤمنين من الديانتين إلى إرسال مقالات للنشر في الموقع: قراءة في نصّ، أو مقابلة بين التقليدين، أو تجربة شخصية في التعلّم المشترك.</p>
+   <ul><li>روح المقال: احترام متبادل بين الأديان، ومن غير جدال يحطّ من شأن الآخر.</li><li>المصادر: تُذكر بدقّة، والاقتباسات كاملة.</li><li>اللغة: العربية أو العبرية (أو كلتاهما). يمكننا ترجمة المقال إلى اللغة الأخرى بموافقة الكاتب.</li><li>الطول: نحو 600 إلى 1500 كلمة.</li><li>مع المقال: الاسم (أو اسم مستعار) ونبذة قصيرة، وتأكيد أنّ المقال من تأليفكم وأنّكم توافقون على نشره.</li></ul>
+   <p>تُراجَع المقالات قبل النشر، وقد نقترح تعديلات أو نعتذر عن النشر.</p></div>
+  <div class="col-he"><p>אנו מזמינים חוקרים, מורים ומאמינים משתי הדתות לשלוח מאמרים לפרסום באתר: עיון בטקסט, השוואה בין שתי המסורות, או חוויה אישית מלימוד משותף.</p>
+   <ul><li>רוח המאמר: כבוד הדדי בין הדתות, בלי פולמוס שמקטין את האחר.</li><li>מקורות: מובאים במדויק, והציטוטים במלואם.</li><li>שפה: ערבית או עברית (או שתיהן). נוכל לתרגם את המאמר לשפה השנייה, בהסכמת הכותב.</li><li>היקף: כ־600 עד 1,500 מילים.</li><li>עם המאמר: שם (או שם עט) ומשפט היכרות קצר, ואישור שהמאמר שלכם ושאתם מסכימים לפרסומו.</li></ul>
+   <p>המאמרים נבדקים לפני הפרסום, ולעתים נציע תיקונים או נימנע מפרסום.</p></div></div>
+  <p><a class="btn primary" href="mailto:${MAIL}?subject=${encodeURIComponent('مقال ضيف · מאמר אורח')}">${L('לשליחת מאמר אורח', 'لإرسال مقال ضيف')}</a> <a class="btn guest-link" href="#/guest" hidden>${L('מאמרי האורח שפורסמו', 'مقالات الضيوف المنشورة')}</a></p></section>
+  <section class="card" id="social"><h2>${L('ברשתות', 'على الشبكات')}</h2><ul class="soclist">${soc}</ul></section></div>`;
+  guestList().then(g => { if (g.length) $$('.guest-link').forEach(a => a.hidden = false); });
+  if (anchor) scrollToAnchor(anchor);
+}
+
+let GUEST = null;
+const guestList = async () => GUEST || (GUEST = await fetch('guest/index.json').then(r => r.ok ? r.json() : []).catch(() => []));
+async function viewGuest() {
+  markTab('guest'); setTitle('מאמרי אורח · مقالات الضيوف');
+  const list = await guestList();
+  app.innerHTML = `<div class="page"><h1>${L('מאמרי אורח', 'مقالات الضيوف')}</h1>
+    ${list.length ? `<ul class="newslist">${list.map(n => `<li><a href="${esc(n.url)}">${L(esc(n.title || ''), esc(n.titleAr || ''))}</a> <span class="muted small">${esc(n.author || '')} · ${esc(n.date || '')}</span></li>`).join('')}</ul>` : `<p class="muted">${L('המאמרים הראשונים יתפרסמו כאן בקרוב.', 'ستُنشر المقالات الأولى هنا قريبًا.')}</p>`}
+    <p><a class="btn" href="#/contact/guest">${L('איך שולחים מאמר אורח', 'كيف ترسلون مقالًا')}</a></p></div>`;
+}
+
 async function viewAbout(anchor) {
   markTab('about'); setTitle('אודות · عن المشروع');
   const home = location.origin + location.pathname.replace(/index\.html$/, '');
@@ -367,7 +407,7 @@ async function viewAbout(anchor) {
     <p class="small muted">גופנים: Amiri, Amiri Quran, Frank Ruhl Libre, Heebo – ברישיון SIL Open Font License.</p>
     <p>המאגר מתעדכן ומתרחב כל הזמן. הערות ותיקונים יתקבלו בברכה: <a href="${ISSUES}" target="_blank" rel="noopener">דיווח על טעות או הצעת תרגום</a> (דרך GitHub). גם בכל כרטיס מקבילה, תחת „פרטים“, יש קישור לדיווח.</p>
     <p>הגיליון השבועי – בנושאי אמונה בין האסלאם ליהדות: <a href="${NEWS_FORM}" target="_blank" rel="noopener">הרשמה</a> · <a href="#/news">ארכיון הגיליונות</a></p>
-    <p>ליצירת קשר במייל: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
+    <p>ליצירת קשר במייל: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a> · <a href="#/contact">כל דרכי הקשר, תיקונים ומאמרי אורח</a></p>
    </div>
    <div class="col-ar ar" lang="ar">
     <p><b>مدرسة الإيمان</b> قاعدة بيانات ثنائية اللغة، بالعبرية والعربية، تضع مصادر اليهودية والإسلام بعضها قبالة بعض: التوراة والأنبياء والكتب وأدب الحكماء قبالة القرآن والحديث. وهي معدّة للدراسة المشتركة («الحَبروتا») بين اليهود والمسلمين، وللتأمل باحترام في أوجه الشبه والاختلاف بين التقليدين.</p>
@@ -393,7 +433,7 @@ async function viewAbout(anchor) {
     <p class="small muted">الخطوط: Amiri وAmiri Quran وFrank Ruhl Libre وHeebo – برخصة SIL Open Font License.</p>
     <p>القاعدة تُحدَّث وتتوسّع باستمرار، والملاحظات والتصويبات موضع ترحيب: <a href="${ISSUES}" target="_blank" rel="noopener">الإبلاغ عن خطأ أو اقتراح ترجمة</a> (عبر GitHub). وفي كل بطاقة توازٍ، تحت «تفاصيل»، رابط للإبلاغ أيضًا.</p>
     <p>النشرة الأسبوعية – في قضايا الإيمان بين الإسلام واليهودية: <a href="${NEWS_FORM}" target="_blank" rel="noopener">الاشتراك</a> · <a href="#/news">أرشيف النشرات</a></p>
-    <p>للتواصل بالبريد الإلكتروني: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a></p>
+    <p>للتواصل بالبريد الإلكتروني: <a href="mailto:madrasataliman@gmail.com" dir="ltr">madrasataliman@gmail.com</a> · <a href="#/contact">كلّ طرق التواصل والتصويبات ومقالات الضيوف</a></p>
    </div></div></div>`;
   if (anchor === 'cite' || anchor === 'method') scrollToAnchor(anchor);
 }
@@ -877,6 +917,8 @@ async function route() {
     else if (v === 'h') await viewHadith(+a || 0, b);
     else if (v === 'about') await viewAbout(a);
     else if (v === 'news') await viewNews();
+    else if (v === 'contact') await viewContact(a);
+    else if (v === 'guest') await viewGuest();
     else if (v === 'saved') await viewSaved();
     else if (v === 'search') await viewSearch(h.slice(7));
     else await viewHome();
@@ -890,6 +932,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
   META = await J('meta.json');
   $('#built').innerHTML = L(`עדכון אחרון: ${META.built}`, `آخر تحديث: ${META.built}`);
   updSavedCount();
+  guestList().then(g => { const m = $('#guestMenu'); if (m && g.length) m.hidden = false; });
   route();
 })();
 // keep the page map just under the sticky header
