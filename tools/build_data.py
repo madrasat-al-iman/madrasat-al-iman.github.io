@@ -146,6 +146,20 @@ PLACEHOLDER = {'התרגום לעברית – בהכנה', 'התרגום לער�
 INTERNAL_TAG = re.compile(r'\s*\[(?:שורות בגיליון|صفوف في)[^\]]*\]')
 
 
+def hanukkah_dates():
+    """[[first day, last day], ...] of Hanukkah (25 Kislev, 8 days), this Hebrew year and the next three"""
+    try:
+        from pyluach import dates
+    except ImportError:
+        return []
+    y = dates.HebrewDate.today().year
+    out = []
+    for hy in range(y, y + 4):
+        d = dates.HebrewDate(hy, 9, 25).to_pydate()
+        out.append([d.isoformat(), (d + datetime.timedelta(days=7)).isoformat()])
+    return out
+
+
 def parsha_weeks(parashot):
     """[[date of Shabbat, [parasha i, ...]], ...] for the Land of Israel reading cycle, a year back to three years ahead"""
     try:
@@ -521,7 +535,7 @@ def main(fa, fb, fc):
     dump('appendices.json', app)
 
     used_dt.add('saadia')
-    meta = {'built': datetime.date.today().isoformat(), 'weekly': parsha_weeks(parashot), 'dating': {k: v for k, v in DT.items() if k in used_dt},
+    meta = {'built': datetime.date.today().isoformat(), 'weekly': parsha_weeks(parashot), 'hanukkah': hanukkah_dates(), 'dating': {k: v for k, v in DT.items() if k in used_dt},
             'parashot': plist, 'nakh': nak_list, 'suras': sura_list, 'hadith': coll_list, 'themes': themes,
             'counts': {'torahParallels': sum(len(v) for v in tpar.values()), 'nakhParallels': sum(len(v) for v in nbooks.values()),
                        'quranParallels': sum(len(v) for v in vpar.values()), 'topics': len(ctopics),
@@ -532,6 +546,8 @@ def main(fa, fb, fc):
     share_pages(ctopics, plist, sura_list, nak_list)
     dump('search.json', search)
     print(json.dumps(meta['counts'], ensure_ascii=False))
+    import catalog
+    print('catalog', catalog.main())
 
 
 if __name__ == '__main__':
