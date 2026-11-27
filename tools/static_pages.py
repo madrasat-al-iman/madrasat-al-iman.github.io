@@ -20,6 +20,17 @@ def site_url():
         return 'https://madrasat-al-iman.github.io/'
 
 
+def gem(n):
+    """Hebrew numeral (chapters up to 199)"""
+    if n in (15, 16): return {15: 'טו', 16: 'טז'}[n]
+    out = ''
+    for v, ch in ((100, 'ק'), (90, 'צ'), (80, 'פ'), (70, 'ע'), (60, 'ס'), (50, 'נ'), (40, 'מ'), (30, 'ל'), (20, 'כ'), (10, 'י'), (9, 'ט'), (8, 'ח'), (7, 'ז'), (6, 'ו'), (5, 'ה'), (4, 'ד'), (3, 'ג'), (2, 'ב'), (1, 'א')):
+        while n >= v:
+            if n in (15, 16): return out + {15: 'טו', 16: 'טז'}[n]
+            out += ch; n -= v
+    return out
+
+
 def J(p):
     return json.load(open(os.path.join(DATA, p), encoding='utf-8'))
 
@@ -139,6 +150,10 @@ def build(sura_he, nakh_ar):
                 body.append(f'<h2>{he} · <span lang="ar">{ar}</span></h2>{two(d.get(k), d.get(k + "Ar"))}{dating((d.get("dt") or {}).get(k), D)}')
         if d.get('question') or d.get('questionAr'):
             body.append(f'<h2>שאלות ללימוד משותף · <span lang="ar">أسئلة للدراسة المشتركة</span></h2>{two(d.get("question"), d.get("questionAr"))}')
+        rel = [x.strip() for x in re.split(r';', d.get('related') or '') if re.match(r'\s*[NS]\d+', x)]
+        if rel:
+            body.append('<h2>נושאים קשורים · <span lang="ar">موضوعات ذات صلة</span></h2><ul class="rel">' + ''.join(
+                f'<li><a href="{E(r.split()[0])}.html">{E(r)}</a></li>' for r in rel) + '</ul>')
         desc = clip(d.get('summary'), 160) + ' · ' + clip(d.get('summaryAr'), 110)
         route = f"c/{t['code']}"
         pages.append((route, page(site, route, d['title'], d.get('titleAr') or '', desc, '\n'.join(body),
@@ -165,7 +180,8 @@ def build(sura_he, nakh_ar):
         ctx_ar = f" ({u0['nameAr']})" if u0 and u0.get('nameAr') else ''
         uhe = '، '.join(u['name'] for u in us[:4]).replace('،', ',')
         uar = '، '.join(u['nameAr'] for u in us[:4] if u.get('nameAr'))
-        desc = (f"{P['book']} – פרשת {P['name']}: נוסח המסורה ותרגום ון־דייק, עם {len(d['parallels'])} מקבילות מן הקוראן ומן החדית׳"
+        chs = f"{P['book']} {gem(P['from'][0])}" + (f"–{gem(P['to'][0])}" if P['to'][0] != P['from'][0] else '')
+        desc = (f"{chs} – פרשת {P['name']}: נוסח המסורה ותרגום ון־דייק, עם {len(d['parallels'])} מקבילות מן הקוראן ומן החדית׳"
                 + (f" ({uhe})" if uhe else '') + f" · {P.get('bookAr') or ''} – برشا {ar_name}" + (f" ({uar})" if uar else ''))
         route = f"b/{p['i']}"
         pages.append((route, page(site, route, f"פרשת {P['name']}", f"برشا {ar_name}", desc, '\n'.join(body),
@@ -185,7 +201,13 @@ def build(sura_he, nakh_ar):
                 body.append(f'<section class="card"><h3>{s["n"]}:{x.get("a")} ⇄ {E(x.get("ref") or "")}</h3>'
                             f'{two(x.get("srcHe"), x.get("srcAr"))}{two(x.get("note"), x.get("noteAr"), "note")}{dating(x.get("dt"), D)}</section>')
         he_name = sura_he[s['n']]
-        desc = f"סורה {s['n']} ({he_name}) בערבית ובתרגום עברי, עם {s['parallels']} מקבילות מן המקרא ומספרות חז״ל · سورة {d['name']} مع التوازيات من المقرا وأدب الحكماء"
+        cnt = {}
+        for x in d['parallels']:
+            b = ' '.join((x.get('ref') or '').replace(',', ' ').split()[:2])
+            if b and not re.search(r'[A-Za-z\d]', b): cnt[b] = cnt.get(b, 0) + 1
+        books = sorted(cnt, key=lambda b: -cnt[b])
+        main = ('; מקבילות עיקריות: ' + ' · '.join(books[:3])) if books else ''
+        desc = f"סורה {s['n']} ({he_name}) בערבית ובתרגום עברי, עם {s['parallels']} מקבילות מן המקרא ומספרות חז״ל{main} · سورة {d['name']} مع التوازيات من المقرا وأدب الحكماء"
         route = f"a/{s['n']}"
         pages.append((route, page(site, route, f"סורה {s['n']}: {he_name}", f"سورة {d['name']}", desc, '\n'.join(body),
                                   [home, ('הקוראן ותפסיר עם הספר', site + '#/a'), (f"סורה {s['n']}", f'{site}{route}.html')],
