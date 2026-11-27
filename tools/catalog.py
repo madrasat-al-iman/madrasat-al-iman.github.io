@@ -38,6 +38,9 @@ def main():
         for p in sorted(q.get('parallels', []), key=lambda x: (x['a'], x['b'])):
             rng = f"{q['n']}:{p['a']}" + (f"–{p['b']}" if p['b'] != p['a'] else '')
             lines.append(f"{rng} | {p['id']} | {p.get('corpus') or ''} | {p.get('ref') or ''}")
+        for p in sorted(q.get('bible', []), key=lambda x: (x['a'], x['b'])):   # story-level biblical links (sheet "מקרא וחז״ל ↔ קוראן")
+            rng = f"{q['n']}:{p['a']}" + (f"–{p['b']}" if p['b'] != p['a'] else '')
+            lines.append(f"{rng} | (סיפור) | מקרא | {p.get('ref') or ''}")
     files['quran.txt'] = lines
     # torah and nakh
     for sub, name, title in (('torah', 'torah.txt', 'תורה: מזהה | פרשה | הפניה במקרא | סוג | המקור האסלאמי'),
