@@ -2,6 +2,7 @@
 
 שימוש:
   python3 tools/newsletter_page.py <sent_body.html> <YYYY-MM-DD> "<כותרת בעברית>" "<العنوان بالعربية>"
+  python3 tools/newsletter_page.py --langs newsletter/*.html   # מתג השפה (ערבית/עברית/שתיהן) לדפים קיימים; רץ גם בכל בנייה
 
 הקלט: גוף ה־HTML של המייל כפי שנשלח בפועל (מתיקיית „נשלח“).
 הפלט: newsletter/<date>.html, שורה ב־newsletter/index.json (החדש ראשון, בלי כפילות), ושורה ב־sitemap.xml.
@@ -36,6 +37,58 @@ def clean(body):
     body = re.sub(r'קיבלת את הגיליון[^<]*<br\s*/?>', '', body)
     return body.strip()
 
+AR, HE = re.compile('[؀-ۿ]'), re.compile('[֐-׿]')
+SEP = re.compile(r'(\s+[·—]\s+)')
+SWITCH = '<link rel="stylesheet" href="../assets/newsletter.css"><script src="../assets/newsletter.js" defer></script><meta name="nl-langs" content="1">'
+
+
+def _mark_text(t):
+    """Bilingual text outside any lang="…" element → spans per language, separators marked (for the language switch)."""
+    if not (AR.search(t) or HE.search(t)) and not SEP.fullmatch(t):
+        return t
+    parts = SEP.split(t)
+    ar_digits = any(re.fullmatch(r'\s*[٠-٩]+\s*', p) for p in parts)
+    out = []
+    for k, p in enumerate(parts):
+        if k % 2:
+            out.append(f'<span class="nl-sep">{p}</span>')
+        elif AR.search(p) and not HE.search(p):
+            out.append(f'<span data-l="ar">{p}</span>')
+        elif HE.search(p) and not AR.search(p):
+            out.append(f'<span data-l="he">{p}</span>')
+        elif ar_digits and re.fullmatch(r'\s*\d+\s*', p):
+            out.append(f'<span data-l="he">{p}</span>')
+        else:
+            out.append(p)
+    return ''.join(out)
+
+
+def langify(page):
+    """Adds the Arabic / Hebrew / both switch to an archived newsletter page (idempotent)."""
+    if 'name="nl-langs"' in page:
+        return page
+    head, body = page.split('<body', 1)
+    out, stack = [], []
+    for m in re.finditer(r'<!--.*?-->|<[^>]+>|[^<]+', '<body' + body, re.S):
+        x = m.group(0)
+        if x.startswith('<!--'):
+            out.append(x); continue
+        if x.startswith('</'):
+            tag = x[2:-1].strip().lower()
+            while stack:
+                t, _ = stack.pop()
+                if t == tag:
+                    break
+            out.append(x); continue
+        if x.startswith('<'):
+            tag = re.match(r'<\s*([a-zA-Z0-9]+)', x)
+            if tag and not x.endswith('/>') and tag.group(1).lower() not in ('br', 'img', 'meta', 'link', 'hr', 'input'):
+                stack.append((tag.group(1).lower(), bool(re.search(r'\slang="', x))))
+            out.append(x); continue
+        inside = any(l for _, l in stack) or any(t in ('script', 'style', 'title') for t, _ in stack)
+        out.append(x if inside else _mark_text(x))
+    return head.replace('</head>', SWITCH + '\n</head>', 1) + ''.join(out)
+
 
 def main(src, date, title_he, title_ar):
     site = site_url()
@@ -66,6 +119,7 @@ def main(src, date, title_he, title_ar):
 <a href="../index.html#/news" style="color:#1f2a44;font-weight:bold">للاشتراك في النشرة الأسبوعية · להרשמה לגיליון השבועי</a> · {d}</p>
 </body></html>
 """
+    page = langify(page)
     assert '@' not in re.sub(r'<style>.*?</style>', '', page, flags=re.S).replace('@context', ''), 'e-mail address left in page'
     os.makedirs(os.path.join(ROOT, 'newsletter'), exist_ok=True)
     open(os.path.join(ROOT, route), 'w', encoding='utf-8').write(page)
@@ -89,5 +143,17 @@ def main(src, date, title_he, title_ar):
     print(url)
 
 
+def retrofit(paths):
+    for p in paths:
+        t = open(p, encoding='utf-8').read()
+        n = langify(t)
+        if n != t:
+            open(p, 'w', encoding='utf-8').write(n)
+            print('langs:', p)
+
+
 if __name__ == '__main__':
-    main(*sys.argv[1:5])
+    if sys.argv[1:2] == ['--langs']:
+        retrofit(sys.argv[2:])
+    else:
+        main(*sys.argv[1:5])

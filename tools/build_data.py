@@ -186,6 +186,8 @@ def share_pages(*_):
     nakh_ar = dict(re.findall(r"'([^']+)': '([^']+)'", re.search(r'const NAKH_AR = \{(.*?)\};', js, re.S).group(1)))
     shutil.rmtree(os.path.join(ROOT, 'share'), ignore_errors=True)    # replaced by the full pages
     n = static_pages.build(sura_he, nakh_ar)
+    import glob, newsletter_page    # archived newsletters: Arabic / Hebrew / both switch (idempotent)
+    newsletter_page.retrofit(sorted(glob.glob(os.path.join(ROOT, 'newsletter', '20*.html'))))
     site = static_pages.site_url()
     p = os.path.join(ROOT, 'index.html')
     h = open(p, encoding='utf-8').read()
