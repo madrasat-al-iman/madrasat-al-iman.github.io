@@ -586,6 +586,18 @@ function quranSide(cur) {
   return `<aside class="side"><input type="search" id="sfilter" placeholder="סינון סורות · تصفية السور" aria-label="סינון סורות · تصفية السور" style="width:100%;margin-bottom:6px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)">
   <div id="slist">${META.suras.map(s => `<a href="#/a/${s.n}" class="${s.n === cur ? 'on' : ''}" data-f="${esc(norm(s.name + ' ' + SURA_HE[s.n] + ' ' + s.n))}"><span>${s.n}. ${L(esc(SURA_HE[s.n]), esc(s.name))}</span><span class="n">${s.parallels || ''}</span></a>`).join('')}</div></aside>`;
 }
+/* Hebrew translation on the sura pages: ours (default) or Reckendorf 1857 */
+async function setHeTr(su, m) {
+  $$('.trsw [data-hetr]').forEach(b => b.classList.toggle('on', b.dataset.hetr === m));
+  const note = $('.trnote'); if (note) note.hidden = m !== 'rk';
+  const R = m === 'rk' ? await J(`reck/${pad(su, 3)}.json`).catch(() => null) : null;
+  $$('.vrow .he[data-v]').forEach(el => { const t = $('.vt', el); if (!t) return;
+    if (t.dataset.mh === undefined) t.dataset.mh = t.textContent;
+    if (!R) { t.textContent = t.dataset.mh; t.classList.remove('rk'); t.removeAttribute('title'); return; }
+    const x = R[el.dataset.v]; t.classList.add('rk');
+    t.textContent = x ? (x[0] || '(כלול בפסוק הקודם בתרגום רקנדורף)') : '(אין לפסוק זה מקבילה בנוסח רקנדורף שבוויקיטקסט)';
+    t.title = x ? `רקנדורף, פסוק ${x[1]}` : ''; });
+}
 async function viewQuran(su, v) {
   markTab('a');
   su = su || 1;
@@ -613,7 +625,7 @@ async function viewQuran(su, v) {
   const secs = starts.map((f, k) => ({ f, t: k + 1 < starts.length ? starts[k + 1] - 1 : last }));
   const secOf = p => { const a = p.a || 1; let k = secs.length - 1; while (k > 0 && secs[k].f > a) k--; return k; };
   const vrow = (x, ids) => `<div class="vrow"${ids ? ` id="v-${x.v}"` : ''}>
-      <div class="he layer-text"><a class="num" href="#/a/${su}/${x.v}">${x.v}</a>${esc(x.he)}</div>
+      <div class="he layer-text" data-v="${x.v}"><a class="num" href="#/a/${su}/${x.v}">${x.v}</a><span class="vt">${esc(x.he)}</span></div>
       <div class="ar q-text layer-text" lang="ar">${esc(x.ar)} <span class="num">﴿${arNum(x.v)}﴾</span><button type="button" class="play" data-play="${su}:${x.v}" title="השמע · استمع" aria-label="השמע פסוק ${su}:${x.v} · استمع إلى الآية ${arNum(su)}:${arNum(x.v)}">▶</button></div>
       ${ids && x.notes ? `<div class="saadia layer-note"><b>${L('הערת תרגום', 'ملاحظة الترجمة')}:</b> <span class="col-he">${esc(x.notes.join(' · '))}</span> <span class="col-ar ar muted" lang="ar">(ملاحظة على صياغة الترجمة العبرية)</span></div>` : ''}
     </div>`;
@@ -633,6 +645,8 @@ async function viewQuran(su, v) {
     <div class="muted">${L(`${d.verses.length} פסוקים · ${d.parallels.length + d.bible.length} מקבילות`, `${arNum(d.verses.length)} آية · ${arNum(d.parallels.length + d.bible.length)} توازيًا`)}</div>
     ${shareBar(`סורה ${su}: ${SURA_HE[su]}`, `سورة ${d.name}`, 'הסורה בערבית ובתרגום עברי, עם המקבילות מן המקרא ומספרות חז״ל', 'السورة بالعربية وبترجمة عبرية، مع التوازيات من المقرا وأدب الحكماء', `a/${su}`)}
     ${NAV}
+    <div class="trsw" role="group" aria-label="התרגום העברי · الترجمة العبرية"><span class="muted small">${L('התרגום העברי:', 'الترجمة العبرية:')}</span><button type="button" data-hetr="mh">${L('מדרשת האמונה', 'مدرسة الإيمان')}</button><button type="button" data-hetr="rk">${L('רקנדורף (1857)', 'ريكندورف (1857)')}</button></div>
+    <p class="trnote small muted" hidden>${L('תרגום צבי חיים (הרמן) רקנדורף, „אלקוראן או המקרא“, לייפציג תרי״ז/1857 – התרגום הראשון של הקוראן לעברית; לפי ויקיטקסט (טקסט שלא הוגה), בלי הערות המתרגם. רקנדורף מחלק את הפסוקים אחרת, והחלוקה הותאמה אוטומטית למספור המקובל. הציטוטים במקבילות – לפי תרגום מדרשת האמונה.', 'ترجمة تسفي حاييم (هرمان) ريكندورف «القرآن أو المقرا»، لايبزيغ 1857 – أول ترجمة للقرآن إلى العبرية؛ حسب ويكي مصدر (نص غير مدقق)، دون حواشي المترجم. يقسّم ريكندورف الآيات تقسيمًا آخر، وقد طوبق آليًا مع الترقيم المعتمد. الاقتباسات في التوازيات حسب ترجمة مدرسة الإيمان.')}</p>
     <details class="vfold whole"><summary>${L(`קריאת הסורה ברצף, בלי המקבילות (${d.verses.length} פסוקים)`, `قراءة السورة متصلةً دون التوازيات (${arNum(d.verses.length)} آية)`)}</summary><div class="verses">${d.verses.map(x => vrow(x, false)).join('')}</div></details>
     <div class="units-h"><h2>${L(`הסורה ${multi ? 'לפי קטעים' : ''}, עם תפסיר עם הספר`.replace(' ,', ','), `السورة${multi ? ' حسب المقاطع' : ''}، مع تفسير أهل الكتاب`)}</h2>${foldAllBtn()}</div>
     ${body}
@@ -640,6 +654,8 @@ async function viewQuran(su, v) {
       <p class="muted small">${L('מבחר מן המקבילות המובהקות בסורה. לחצו על מקבילה כדי לקרוא אותה במלואה.', 'مختارات من أوضح التوازيات في السورة. اضغطوا على أي توازٍ لقراءته كاملًا.')}</p>
       ${keyP.map(x => card(x, { fold: true, pre: x[0] === 'p' ? 'kp' : 'kb', goto: x[0] === 'p' ? `qp-${x[1].id}` : `qb-${x[1].k}` })).join('')}</section>` : ''}
     <div class="pager">${su > 1 ? `<a class="btn" href="#/a/${su - 1}">→ ${L(`סורה ${su - 1}: ${SURA_HE[su - 1]}`, `سورة ${arNum(su - 1)}`)}</a>` : '<span></span>'}${su < 114 ? `<a class="btn" href="#/a/${su + 1}">${L(`סורה ${su + 1}: ${SURA_HE[su + 1]}`, `سورة ${arNum(su + 1)}`)} ←</a>` : ''}</div>`;
+  setHeTr(su, store.get('hetr', 'mh'));
+  $('.trsw', app).onclick = e => { const b = e.target.closest('[data-hetr]'); if (!b) return; store.set('hetr', b.dataset.hetr); setHeTr(su, b.dataset.hetr); };
   buildNav($('.page', app), [['.vfold.whole', 'הסורה ברצף', 'السورة متصلة'], ['.par-h', 'תפסיר עם הספר', 'تفسير أهل الكتاب', 'par'], ['.layer-note', 'הערות תרגום', 'ملاحظات الترجمة', 'note'], ['.keypar', 'מקבילות נבחרות', 'توازيات مختارة']], multi ? '.unit[data-unit]' : '', ['קטע בסורה', 'مقطع في السورة']);
   $('#slist a.on')?.scrollIntoView({ block: 'nearest' });
   scrollToAnchor(v && `v-${v}`);
