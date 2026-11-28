@@ -331,3 +331,6 @@ details.refs-all > .fieldrow{padding:0 12px}
 .saved .card p{margin:.35em 0} .print-only{display:none}
 @media print{.print-only{display:block}}
 .apx .fv{white-space:pre-line}
+.seen{display:block;font-size:.88em;color:var(--muted);font-family:var(--ui)}
+.seen a{color:var(--navy)}
+.col-he .seen > .col-ar,.he .seen > .col-ar,.col-ar .seen > .col-he,.ar .seen > .col-he{display:none!important}

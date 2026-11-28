@@ -217,7 +217,7 @@ function play(key, btn) {
 function parallelCard(p, route, showBible, o = {}) {
   const q = quranRefs(p.src);
   const jump = q.length ? `<a href="#/a/${q[0][0]}/${q[0][1]}">${L('לקוראן', 'إلى القرآن')}</a>` : '';
-  const txt = [`${p.ref || ''} ⇄ ${p.src || ''}`, p.refAr && p.srcAr ? `${p.refAr} ⇄ ${p.srcAr}` : '', p.textHe, p.textAr, p.note, p.noteAr].filter(Boolean).join('\n');
+  const F = p._full || p, txt = [`${p.ref || ''} ⇄ ${p.src || ''}`, p.refAr && p.srcAr ? `${p.refAr} ⇄ ${p.srcAr}` : '', F.textHe, F.textAr, p.note, p.noteAr].filter(Boolean).join('\n');
   return foldCard(o, 'card', `${o.pre || 'p'}-${esc(p.id)}`, `<div>
       <span class="t col-he">${esc(p.ref || '')} <span class="muted">⇄</span> ${linkQuran(p.src || '')}</span>
       ${p.refAr || p.srcAr ? `<div class="t col-ar ar" lang="ar">${esc(p.refAr || '')} <span class="muted">⇄</span> ${esc(p.srcAr || '')}</div>` : ''}
@@ -235,11 +235,49 @@ function fqCard(p, showBible, o = {}) {
   return foldCard(o, 'card fq', `${o.pre || 'q'}-${esc(p.id)}`, `<div><span class="t col-he">${esc(p.ref || '')} <span class="muted">⇄</span> קוראן <a href="#/a/${p.su}/${p.a}"><bdi dir="ltr">${q}</bdi></a></span>
       ${p.refAr ? `<div class="t col-ar ar" lang="ar">${esc(p.refAr)} <span class="muted">⇄</span> <a href="#/a/${p.su}/${p.a}">${arNum(p.su)}: ${arNum(p.a)}${p.b !== p.a ? '–' + arNum(p.b) : ''}</a></div>` : ''}
       <div class="chips"><span class="chip">${L('מתוך „עם הספר לקוראן״', 'من «أهل الكتاب والقرآن»')}</span>${strengthChip(p.strength)}</div>${o.fold ? teaser(p.note, p.noteAr) : ''}</div>
-      ${cardActs([`${p.ref} ⇄ ${q}`, p.refAr, p.qHe, p.qAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${p.su}/${p.a}`, `<a href="#/a/${p.su}/${p.a}">${L('לקוראן', 'إلى القرآن')}</a>`)}`, `
+      ${cardActs([`${p.ref} ⇄ ${q}`, p.refAr, (p._full || p).qHe, (p._full || p).qAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${p.su}/${p.a}`, `<a href="#/a/${p.su}/${p.a}">${L('לקוראן', 'إلى القرآن')}</a>`)}`, `
     ${showBible && (p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe || '')}</div><div class="ar col-ar" lang="ar">${esc(p.bibleAr || '')}</div></div><hr style="border:0;border-top:1px dashed var(--line)">` : ''}
     ${(p.qHe || p.qAr) ? `<div class="two"><div class="he col-he">${esc(p.qHe || '')}</div><div class="ar col-ar q-text" lang="ar">${esc(p.qAr || '')}</div></div>` : ''}
     ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${linkQuran(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}${o.goto ? gotoLink(o.goto, o.gw) : ''}`);
 }
+
+/* ---------- one full text per page: a source quoted again on the same page is shown as a reference with a link ---------- */
+const HAD_KEYS = [['בוח׳ארי', 'bu'], ['מוסלם', 'mu'], ['תרמד׳י', 'ti'], ['אבו דאוד', 'ad'], ['נסאא', 'na'], ['אבן מאג׳ה', 'im'], ['אחמד', 'ah'], ['מווטא', 'ma'], ['מאלכ', 'ma'], ['אלאדב אלמפרד', 'ab'], ['דארמי', 'da']];
+function srcKeys(t) {
+  const k = new Set(); t = t || '';
+  for (const m of t.matchAll(/(?<![\d.:])(\d{1,3}):(\d{1,3})(?:\s?[–-]\s?(\d{1,3}))?(?![\d:])/g)) { const a = +m[2], b = Math.min(+(m[3] || a), a + 60); for (let v = a; v <= b; v++) k.add(`Q${+m[1]}:${v}`); }
+  for (const [n, c] of HAD_KEYS) for (const m of t.matchAll(new RegExp(n + '[^\\d✦]{0,14}?(\\d+)', 'g'))) k.add(`${c}${m[1]}`);
+  return [...k];
+}
+const SEG_LBL = /^\s*([^:✦]{0,48}?\d+(?::\s?\d+)?(?:\s?[–-]\s?\d+)?):\s/;
+const SEEN_TOK = {};
+function dedupeRow(seen, p, cid, fh, fa, src) {
+  const he = (p[fh] || '').split('✦'), ar = (p[fa] || '').split('✦'), aligned = he.length === ar.length;
+  const out = { ...p, _full: p }; let changed = false, allGone = true;
+  he.forEach((sg, k) => {
+    const lbl = (sg.match(SEG_LBL) || [])[1], keys = srcKeys(lbl || (he.length === 1 ? src : ''));
+    if (keys.length && keys.every(x => seen.has(x))) {
+      const t = 'ⓢ' + Object.keys(SEEN_TOK).length + 'ⓢ', first = seen.get(keys[0]);
+      const lblAr = (ar[k] || '').match(SEG_LBL)?.[1];
+      let lh = (lbl || src || '').trim(), la = (lblAr || '').trim(); const qm = lh.match(/^(\d{1,3}):(\d{1,3})(?:\s?[–-]\s?(\d{1,3}))?$/);
+      if (qm) { lh = 'קוראן ' + lh; if (!la) la = `القرآن ${arNum(qm[1])}: ${arNum(qm[2])}${qm[3] ? '–' + arNum(qm[3]) : ''}`; }
+      SEEN_TOK[t] = { he: lh, ar: la, to: first };
+      he[k] = (k ? ' ' : '') + t + (k < he.length - 1 ? ' ' : ''); if (aligned) ar[k] = he[k]; changed = true;
+    } else { allGone = false; keys.forEach(x => { if (!seen.has(x)) seen.set(x, cid); }); }
+  });
+  if (!changed) return p;
+  out[fh] = he.join('✦'); out[fa] = aligned ? ar.join('✦') : (allGone ? he.join('✦') : p[fa]);
+  return out;
+}
+function dedupeWhole(seen, p, cid, fh, fa, key) {
+  key = (key || '').replace(/[\s״"׳']/g, '');
+  if (!key || !(p[fh] || p[fa])) return p;
+  if (!seen.has(key)) { seen.set(key, cid); return p; }
+  const t = 'ⓢ' + Object.keys(SEEN_TOK).length + 'ⓢ'; SEEN_TOK[t] = { he: '', ar: '', to: seen.get(key) };
+  return { ...p, _full: p, [fh]: t, [fa]: t };
+}
+const seenHtml = h => h.replace(/ⓢ\d+ⓢ/g, t => { const x = SEEN_TOK[t]; if (!x) return '';
+  return `<span class="seen"><span class="col-he l-he">${esc(x.he)}${x.he ? ': ' : ''}<a href="#${x.to}" data-goto="${x.to}">הטקסט המלא – במקבילה קודמת בדף ↑</a></span><span class="col-ar l-ar" lang="ar">${esc(x.ar)}${x.ar ? ': ' : ''}<a href="#${x.to}" data-goto="${x.to}">النص الكامل في توازٍ سابق في الصفحة ↑</a></span></span>`; });
 
 /* ---------- folding (collapsed cards and sections) ---------- */
 /* "selected parallels": the clear-cut ones first, spread over the units of the page */
@@ -479,7 +517,7 @@ async function viewTorah(i, anchor) {
   const inR = (c, v, f, t) => key(c, v) >= key(f[0], f[1]) && key(c, v) <= key(t[0], t[1]);
   const units = d.units.length ? d.units : [{ name: P.name, nameAr: P.nameAr, from: P.from, to: P.to }];
   const sa = {}; d.saadia.forEach(s => (sa[key(s.c, s.v)] = sa[key(s.c, s.v)] || []).push(s));
-  const used = new Set();
+  const used = new Set(), SEEN = new Map();
   const ref = (c, v) => `${gem(c)}, ${gem(v)}`;
   const refAr = (c, v) => `${arNum(c)}: ${arNum(v)}`;
   let body = '';
@@ -489,6 +527,7 @@ async function viewTorah(i, anchor) {
     const ps = d.parallels.filter(p => !used.has(p.id) && inR(p.c, p.v, u.from, u.to)); ps.forEach(p => used.add(p.id));
     const fq = (d.fromQuran || []).filter(p => !used.has('q' + p.id) && inR(p.c, p.v, u.from, u.to)); fq.forEach(p => used.add('q' + p.id));
     const np = ps.length + fq.length;
+    const psD = ps.map(p => dedupeWhole(SEEN, dedupeRow(SEEN, p, `p-${p.id}`, 'textHe', 'textAr', p.src), `p-${p.id}`, 'bibleHe', 'bibleAr', 'B' + p.ref)), fqD = fq.map(p => dedupeRow(SEEN, p, `q-${p.id}`, 'qHe', 'qAr', `${p.su}:${p.a}${p.b !== p.a ? '–' + p.b : ''}`));
     body += `<details class="unit" data-unit="${esc(u.name)}" data-unit-ar="${esc(stripPar(u.nameAr || ''))}"><summary class="unit-h"><h2>${L(esc(u.name), esc(u.nameAr || ''))}</h2>
       <span class="muted small">${L(`${esc(P.book)} ${ref(vs[0].c, vs[0].v)} – ${ref(vs.at(-1).c, vs.at(-1).v)}`, `${esc(P.bookAr || '')} ${refAr(vs[0].c, vs[0].v)} – ${refAr(vs.at(-1).c, vs.at(-1).v)}`)}</span>${u.type ? `<span class="chip">${tr(u.type, TYPE_AR)}</span>` : ''}<span class="cnt">${L(`${vs.length} פסוקים${np ? ` · ${np} מקבילות` : ''}`, `${arNum(vs.length)} آية${np ? ` · ${arNum(np)} توازيًا` : ''}`)}</span></summary>
       <details class="vfold"><summary>${L(`קריאת הפסוקים (${vs.length})`, `قراءة الآيات (${arNum(vs.length)})`)}</summary><div class="verses layer-text">${vs.map(v => `<div class="vrow" id="v-${v.c}-${v.v}">
@@ -498,11 +537,11 @@ async function viewTorah(i, anchor) {
           <div class="two small"><div>${L('ון־דייק', 'فان دايك')}: <span lang="ar" class="ar">${esc(s.vd)}</span></div><div>${L('רס״ג', 'سعديا')}: <span lang="ar" class="ar">${esc(s.sa)}</span> <span class="muted col-he">(${esc(s.tr)})</span></div></div>
           <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></div>`).join('')}
       </div>`).join('')}</div></details>
-      ${np ? `<div class="layer-par"><h3 class="par-h">${L('פירוש האסלאם', 'تفسير الإسلام')} <span class="muted small">(${np})</span></h3>${ps.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('')}${fq.map(p => fqCard(p, true, FOLDED)).join('')}</div>` : ''}
+      ${np ? `<div class="layer-par"><h3 class="par-h">${L('פירוש האסלאם', 'تفسير الإسلام')} <span class="muted small">(${np})</span></h3>${seenHtml(psD.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('') + fqD.map(p => fqCard(p, true, FOLDED)).join(''))}</div>` : ''}
     </details>`;
   }
-  const rest = d.parallels.filter(p => !used.has(p.id)), restQ = (d.fromQuran || []).filter(p => !used.has('q' + p.id));
-  if (rest.length || restQ.length) body += `<details class="unit"><summary class="unit-h"><h2>${L('מקבילות נוספות', 'توازيات أخرى')}</h2><span class="cnt">${L(`${rest.length + restQ.length} מקבילות`, `${arNum(rest.length + restQ.length)} توازيًا`)}</span></summary><div class="layer-par">${rest.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('')}${restQ.map(p => fqCard(p, true, FOLDED)).join('')}</div></details>`;
+  const rest = d.parallels.filter(p => !used.has(p.id)).map(p => dedupeRow(SEEN, p, `p-${p.id}`, 'textHe', 'textAr', p.src)), restQ = (d.fromQuran || []).filter(p => !used.has('q' + p.id)).map(p => dedupeRow(SEEN, p, `q-${p.id}`, 'qHe', 'qAr', `${p.su}:${p.a}`));
+  if (rest.length || restQ.length) body += `<details class="unit"><summary class="unit-h"><h2>${L('מקבילות נוספות', 'توازيات أخرى')}</h2><span class="cnt">${L(`${rest.length + restQ.length} מקבילות`, `${arNum(rest.length + restQ.length)} توازيًا`)}</span></summary><div class="layer-par">${seenHtml(rest.map(p => parallelCard(p, `b/${i}/${p.c}:${p.v}`, true, FOLDED)).join('') + restQ.map(p => fqCard(p, true, FOLDED)).join(''))}</div></details>`;
   const unitOf = p => units.findIndex(u => inR(p.c, p.v, u.from, u.to));
   const keyP = pickKey([...d.parallels.map(p => ['p', p]), ...(d.fromQuran || []).map(p => ['q', p])], x => unitOf(x[1]), units.length);
   keyP.sort((x, y) => key(x[1].c, x[1].v) - key(y[1].c, y[1].v));
@@ -541,17 +580,18 @@ async function viewQuran(su, v) {
   const rng = p => `<bdi dir="ltr">${su}:${p.a}${p.b && p.b !== p.a ? '–' + p.b : ''}</bdi>`;
   const card = ([k, p], o = {}) => k === 'p' ? foldCard(o, 'card', `${o.pre || 'qp'}-${esc(p.id)}`, `<div><span class="t col-he">${rng(p)} <span class="muted">⇄</span> ${esc(p.ref || '')}</span>${(p.refAr || refAr(p.ref)) ? `<div class="t col-ar ar" lang="ar">${esc(d.name)} ${rng(p)} ⇄ ${esc(p.refAr || refAr(p.ref))}</div>` : ''}
       <div class="chips">${p.corpus ? `<span class="chip">${tr(p.corpus, TYPE_AR)}</span>` : ''}${strengthChip(p.strength)}</div>${dtLine(p.dt)}${o.fold ? teaser(p.note, p.noteAr) : ''}</div>
-      ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, p.srcHe, p.srcAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${su}/${p.a}`)}`, `
+      ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, (p._full || p).srcHe, (p._full || p).srcAr, p.note, p.noteAr].filter(Boolean).join('\n'), `a/${su}/${p.a}`)}`, `
       ${(p.srcHe || p.srcAr) ? `<div class="two"><div class="he col-he">${esc(p.srcHe)}</div><div class="ar col-ar" lang="ar">${p.srcAr ? esc(p.srcAr) : PENDING}</div></div>` : ''}
       ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}
       <details class="more"><summary>${L('פרטים', 'تفاصيل')}</summary>${p.context ? `<div>${L('הקשר רחב', 'السياق الأوسع')}: ${esc(p.context)}</div>` : ''}${p.edition ? `<div>${L('מהדורה', 'الطبعة')}: ${esc(p.edition)}</div>` : ''}${p.id ? `<div>${L('מזהה', 'المعرّف')}: ${esc(p.id)}</div>` : ''}<div>${reportLink(p.id, `a/${su}/${p.a}`)}</div></details>${o.goto ? gotoLink(o.goto, 1) : ''}`)
     : foldCard(o, 'card', `${o.pre || 'qb'}-${p.k}`, `<div><span class="t col-he">${rng(p)} <span class="muted">⇄</span> <a href="#/${p.route}">${esc(p.ref)}</a></span>${(p.refAr || refAr(p.ref)) ? `<div class="t col-ar ar" lang="ar">${esc(d.name)} ${rng(p)} ⇄ <a href="#/${p.route}">${esc(p.refAr || refAr(p.ref))}</a></div>` : ''}
       <div class="chips"><span class="chip">${tr('תנ״ך', TYPE_AR)}</span>${strengthChip(p.strength)}</div>${o.fold ? teaser(p.note, p.noteAr) : ''}</div>
-      ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, p.bibleHe, p.bibleAr, p.note, p.noteAr].filter(Boolean).join('\n'), p.route)}`, `
+      ${cardActs([`${su}:${p.a} ⇄ ${p.ref}`, p.refAr, (p._full || p).bibleHe, (p._full || p).bibleAr, p.note, p.noteAr].filter(Boolean).join('\n'), p.route)}`, `
       ${(p.bibleHe || p.bibleAr) ? `<div class="two"><div class="he col-he">${esc(p.bibleHe || '')}</div><div class="ar col-ar" lang="ar">${p.bibleAr ? esc(p.bibleAr) : PENDING}</div></div>` : ''}
       ${p.note || p.noteAr ? `<div class="two note"><div class="col-he"><b>הקשר:</b> ${esc(p.note || '')}</div><div class="col-ar ar" lang="ar"><b>الصلة:</b> ${p.noteAr ? esc(p.noteAr) : PENDING}</div></div>` : ''}${o.goto ? gotoLink(o.goto, 1) : ''}`);
   d.bible.forEach((p, k) => { p.k = k; });
   const all = [...d.parallels.map(p => ['p', p]), ...d.bible.map(p => ['b', p])].sort((x, y) => (x[1].a || 1) - (y[1].a || 1));
+  const QSEEN = new Map(), qded = new Map(all.map(x => [x, [x[0], x[0] === 'p' ? dedupeWhole(QSEEN, x[1], `qp-${x[1].id}`, 'srcHe', 'srcAr', x[1].ref) : dedupeWhole(QSEEN, x[1], `qb-${x[1].k}`, 'bibleHe', 'bibleAr', x[1].ref)]]));
   /* sections: the rukūʿ division of the sura */
   const starts = RUKU[su - 1].split(',').map(Number), last = d.verses.length ? d.verses.at(-1).v : 1;
   const secs = starts.map((f, k) => ({ f, t: k + 1 < starts.length ? starts[k + 1] - 1 : last }));
@@ -569,7 +609,7 @@ async function viewQuran(su, v) {
       <span class="opening"><span class="col-ar ar" lang="ar">${esc(vs[0].ar)}</span><span class="col-he">${esc(vs[0].he)}</span></span>
       <span class="cnt">${L(`${vs.length} פסוקים${ps.length ? ` · ${ps.length} מקבילות` : ''}`, `${arNum(vs.length)} آية${ps.length ? ` · ${arNum(ps.length)} توازيًا` : ''}`)}</span></summary>
       <details class="vfold"><summary>${L(`קריאת הפסוקים (${vs.length})`, `قراءة الآيات (${arNum(vs.length)})`)}</summary><div class="verses">${vs.map(x => vrow(x, true)).join('')}</div></details>
-      ${ps.length ? `<div class="layer-par"><h3 class="par-h">${L('תפסיר עם הספר', 'تفسير أهل الكتاب')} <span class="muted small">(${ps.length})</span></h3>${ps.map(x => card(x, FOLDED)).join('')}</div>` : ''}
+      ${ps.length ? `<div class="layer-par"><h3 class="par-h">${L('תפסיר עם הספר', 'تفسير أهل الكتاب')} <span class="muted small">(${ps.length})</span></h3>${seenHtml(ps.map(x => card(qded.get(x), FOLDED)).join(''))}</div>` : ''}
     </details>`; }).join('');
   const keyP = pickKey(all, x => secOf(x[1]), secs.length);
   $('.page', app).innerHTML = `<div class="crumbs">${L('הקוראן ותפסיר עם הספר', 'القرآن وتفسير أهل الكتاب')}</div>
@@ -603,7 +643,10 @@ async function viewNakh(i, anchor) {
   const all = [...d.parallels.map(p => ['b', p]), ...(d.fromQuran || []).map(p => ['q', p])].sort((x, y) => (x[1].c - y[1].c) || (x[1].v - y[1].v));
   const seenV = new Set();
   const cardOf = ([k, p], o) => k === 'b' ? parallelCard(p, `n/${i}/${p.c}:${p.v}`, true, o) : fqCard(p, true, o);
-  const item = x => { const p = x[1], id = `v-${p.c}-${p.v}`, a = seenV.has(id) ? '' : ` id="${id}"`; seenV.add(id); return `<div${a}>${cardOf(x, FOLDED)}</div>`; };
+  const SEEN = new Map();
+  const ded = all.map(([k, p]) => [k, k === 'b' ? dedupeRow(SEEN, p, `p-${p.id}`, 'textHe', 'textAr', p.src) : dedupeRow(SEEN, p, `q-${p.id}`, 'qHe', 'qAr', `${p.su}:${p.a}${p.b !== p.a ? '–' + p.b : ''}`)]);
+  const dedOf = new Map(all.map((x, k) => [x, ded[k]]));
+  const item = x => { const p = x[1], id = `v-${p.c}-${p.v}`, a = seenV.has(id) ? '' : ` id="${id}"`; seenV.add(id); return `<div${a}>${seenHtml(cardOf(dedOf.get(x), FOLDED))}</div>`; };
   /* blocks of consecutive chapters, about ten parallels each */
   const chs = [...new Set(all.map(x => +x[1].c))], blocks = [];
   let cur = [];
