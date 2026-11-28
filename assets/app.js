@@ -507,6 +507,18 @@ function buildNav(page, defs, unitSel, unitLbl) {
   nav.onchange = e => { if (e.target.matches('select.units') && e.target.value) { const el = document.getElementById(e.target.value); reveal(el); el?.scrollIntoView({ behavior: 'smooth', block: 'start' }); e.target.value = ''; }
     if (e.target.dataset.layer) page.classList.toggle('hide-' + e.target.dataset.layer, !e.target.checked); };
 }
+/* Arabic translation on the Torah pages: Van Dyck (default) or Saadia Gaon's Tafsir */
+async function setArTr(i, m) {
+  $$('.trsw [data-artr]').forEach(b => b.classList.toggle('on', b.dataset.artr === m));
+  const note = $('.trnote'); if (note) note.hidden = m !== 'sa';
+  let S = null;
+  if (m === 'sa') S = await J(`saadia/${pad(i, 2)}.json`).catch(() => null);
+  $$('.vrow .ar[data-cv]').forEach(el => { const t = $('.vt', el); if (!t) return;
+    if (t.dataset.vd === undefined) t.dataset.vd = t.textContent;
+    const x = S && S[el.dataset.cv];
+    const nm = $('.num', el); if (nm) { if (nm.dataset.vdn === undefined) nm.dataset.vdn = nm.textContent; nm.textContent = x ? nm.dataset.he : nm.dataset.vdn; }
+    t.textContent = x ? x[0] : t.dataset.vd; if (x) { t.title = x[1]; t.classList.add('sa'); } else { t.removeAttribute('title'); t.classList.remove('sa'); } });
+}
 async function viewTorah(i, anchor) {
   markTab('b');
   if (!i) i = (weeklyParasha()?.ps[0] || META.parashot[0]).i;
@@ -532,7 +544,7 @@ async function viewTorah(i, anchor) {
       <span class="muted small">${L(`${esc(P.book)} ${ref(vs[0].c, vs[0].v)} – ${ref(vs.at(-1).c, vs.at(-1).v)}`, `${esc(P.bookAr || '')} ${refAr(vs[0].c, vs[0].v)} – ${refAr(vs.at(-1).c, vs.at(-1).v)}`)}</span>${u.type ? `<span class="chip">${tr(u.type, TYPE_AR)}</span>` : ''}<span class="cnt">${L(`${vs.length} פסוקים${np ? ` · ${np} מקבילות` : ''}`, `${arNum(vs.length)} آية${np ? ` · ${arNum(np)} توازيًا` : ''}`)}</span></summary>
       <details class="vfold"><summary>${L(`קריאת הפסוקים (${vs.length})`, `قراءة الآيات (${arNum(vs.length)})`)}</summary><div class="verses layer-text">${vs.map(v => `<div class="vrow" id="v-${v.c}-${v.v}">
         <div class="he"><a class="num" href="#/b/${i}/${v.c}:${v.v}">${ref(v.c, v.v)}</a>${esc(v.he)}</div>
-        <div class="ar" lang="ar">${esc(v.ar)} <span class="num">(${arNum(v.vd ? v.vd.replace(':', ': ') : v.v)})</span></div>
+        <div class="ar" lang="ar" data-cv="${v.c}:${v.v}"><span class="vt">${esc(v.ar)}</span> <span class="num" data-he="(${arNum(v.c)}: ${arNum(v.v)})">(${arNum(v.vd ? v.vd.replace(':', ': ') : v.v)})</span></div>
         ${(sa[key(v.c, v.v)] || []).map(s => `<div class="saadia layer-note"><b>${L(`תפסיר רס״ג על „${esc(s.phrase)}״`, 'تفسير سعديا الفيومي')}</b> <span class="muted small">(${dtShort('saadia')})</span>
           <div class="two small"><div>${L('ון־דייק', 'فان دايك')}: <span lang="ar" class="ar">${esc(s.vd)}</span></div><div>${L('רס״ג', 'سعديا')}: <span lang="ar" class="ar">${esc(s.sa)}</span> <span class="muted col-he">(${esc(s.tr)})</span></div></div>
           <div class="two small"><div class="col-he">${esc(s.note)}</div><div class="col-ar ar" lang="ar">${s.noteAr ? esc(s.noteAr) : PENDING}</div></div></div>`).join('')}
@@ -556,10 +568,14 @@ async function viewTorah(i, anchor) {
     ${shareBar(`פרשת ${P.name}`, `برشا ${stripPar(P.nameAr || '')}`, `${P.book} ${ref(P.from[0], P.from[1])} – ${ref(P.to[0], P.to[1])}: התורה עם המקבילות מן הקוראן ומן החדית׳`, `${P.bookAr || ''} – التوراة مع توازياتها من القرآن والحديث`, `b/${i}`)}
     ${NAV}
     <div class="units-h"><h2>${L('הפרשה לפי יחידות, עם פירוש האסלאם על התורה', 'البرشا حسب الوحدات، مع تفسير الإسلام للتوراة')}</h2>${foldAllBtn()}</div>
+    <div class="trsw" role="group" aria-label="התרגום הערבי · الترجمة العربية"><span class="muted small">${L('התרגום הערבי:', 'الترجمة العربية:')}</span><button type="button" data-artr="vd">${L('ון דייק (1865)', 'فان دايك (1865)')}</button><button type="button" data-artr="sa">${L('תפסיר רס״ג (המאה ה־10)', 'تفسير سعديا الفيومي (القرن العاشر)')}</button></div>
+    <p class="trnote small muted" hidden>${L('תפסיר רס״ג לפי ספריא (כתב יד בעברית־ערבית), בתעתיק אוטומטי לאותיות ערביות – ייתכנו טעויות כתיב (למשל ה/ة). הנוסח המקורי באותיות עבריות מופיע כשמצביעים על הפסוק. ההסברים והציטוטים במקבילות – לפי ון דייק.', 'تفسير سعديا الفيومي حسب «سفاريا» (بالعربية اليهودية بحروف عبرية)، منقول آليًا إلى الحروف العربية – قد ترد أخطاء إملائية (مثل ه/ة). يظهر النص الأصلي بالحروف العبرية عند الإشارة إلى الآية. الشروح والاقتباسات في التوازيات حسب فان دايك.')}</p>
     ${body}
     ${keyHtml}
     ${P.questions || P.questionsAr ? `<div class="qs" id="sec-qs"><h3>${L('לשולחן שבת: שאלות לשיחה וללימוד משותף', 'لمائدة السبت: أسئلة للحوار والدراسة المشتركة')}</h3><div class="two"><div class="pre col-he">${esc(P.questions || '')}</div><div class="pre col-ar ar" lang="ar">${P.questionsAr ? esc(P.questionsAr) : PENDING}</div></div></div>` : ''}
     <div class="pager">${prev ? `<a class="btn" href="#/b/${prev.i}">→ ${L(esc(prev.name), esc(stripPar(prev.nameAr)))}</a>` : '<span></span>'}${next ? `<a class="btn" href="#/b/${next.i}">${L(esc(next.name), esc(stripPar(next.nameAr)))} ←</a>` : ''}</div>`;
+  setArTr(i, store.get('artr', 'vd'));
+  $('.trsw', app).onclick = e => { const b = e.target.closest('[data-artr]'); if (!b) return; store.set('artr', b.dataset.artr); setArTr(i, b.dataset.artr); };
   buildNav($('.page', app), [['.verses', 'הטקסט המקורי: תורה', 'النص الأصلي: التوراة', 'text'], ['.par-h', 'פירוש האסלאם', 'تفسير الإسلام', 'par'], ['.saadia', 'הערות: תפסיר רס״ג', 'ملاحظات: تفسير سعديا', 'note'], ['.keypar', 'מקבילות נבחרות', 'توازيات مختارة'], ['#sec-qs', 'שאלות ללימוד משותף', 'أسئلة للدراسة المشتركة']], '.unit[data-unit]');
   $('.side a.on')?.scrollIntoView({ block: 'nearest' });
   scrollToAnchor(anchor && `v-${anchor.replace(':', '-')}`);

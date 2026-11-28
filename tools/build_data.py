@@ -188,6 +188,8 @@ def share_pages(*_):
     n = static_pages.build(sura_he, nakh_ar)
     import glob, newsletter_page    # archived newsletters: Arabic / Hebrew / both switch (idempotent)
     newsletter_page.retrofit(sorted(glob.glob(os.path.join(ROOT, 'newsletter', '20*.html'))))
+    import saadia    # Saadia's Tafsir in Arabic script, per parasha (switch on the Torah pages)
+    saadia.build(os.environ.get('CORPORA', '/home/claude/src/'))
     site = static_pages.site_url()
     p = os.path.join(ROOT, 'index.html')
     h = open(p, encoding='utf-8').read()

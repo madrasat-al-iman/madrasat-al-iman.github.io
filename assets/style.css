@@ -334,3 +334,8 @@ details.refs-all > .fieldrow{padding:0 12px}
 .seen{display:block;font-size:.88em;color:var(--muted);font-family:var(--ui)}
 .seen a{color:var(--navy)}
 .col-he .seen > .col-ar,.he .seen > .col-ar,.col-ar .seen > .col-he,.ar .seen > .col-he{display:none!important}
+.trsw{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0 2px}
+.trsw button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:3px 10px;font:inherit;font-size:13px;cursor:pointer}
+.trsw button.on{background:var(--navy);color:var(--on-navy);border-color:var(--navy)}
+.trnote{margin:2px 0 6px}
+.vt.sa{font-family:var(--ar)}
